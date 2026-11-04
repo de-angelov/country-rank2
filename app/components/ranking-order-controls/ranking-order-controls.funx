@@ -7,27 +7,15 @@ export getRankingOrderLabel = (order: RankingOrder) =>
     | HighestFirst => "Highest First"
     | LowestFirst => "Lowest First"
 
-ts {
-export interface RankingOrderControlsProps {
-  currentOrder?: RankingOrder;
-  order?: RankingOrder;
-  onOrderChange?: (order: RankingOrder) => void;
-  onChange?: (order: RankingOrder) => void;
-}
-}
+export schema RankingOrderControlsProps = { order: String }
 
-export RankingOrderControls = (props: RankingOrderControlsProps) =>
-  active = props.order or props.currentOrder or HighestFirst
+export RankingOrderControls = (props: { order: RankingOrder, onOrderChange: (order: RankingOrder) => Void }) =>
+  active = props.order
   isHighest = match active
     | HighestFirst => true
     | LowestFirst => false
   handleSelect = (nextOrder: RankingOrder) =>
-    when (props.onOrderChange) {
-      props.onOrderChange(nextOrder)
-    }
-    when (props.onChange) {
-      props.onChange(nextOrder)
-    }
+    props.onOrderChange(nextOrder)
     => nextOrder
   highestClass = match active
     | HighestFirst => "px-3 py-1.5 text-sm font-semibold border-2 border-black bg-black text-white rounded cursor-pointer transition-colors"
@@ -53,7 +41,3 @@ export RankingOrderControls = (props: RankingOrderControlsProps) =>
       Lowest First
     </button>
   </div>
-
-ts {
-export default RankingOrderControls;
-}

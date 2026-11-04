@@ -2,13 +2,11 @@ import { Link } from "react-router"
 
 ts {
 import type { ReactNode } from "react";
-
-export interface AppShellProps {
-  children?: ReactNode;
-}
 }
 
-export AppShell = (props: AppShellProps) =>
+export schema AppShellProps = { children: Unknown }
+
+export AppShell = (props: { children: ReactNode }) =>
   <div className="min-h-screen flex flex-col bg-background text-foreground font-sans">
     <header className="border-b-2 border-black bg-white shadow-[var(--shadow)]">
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
