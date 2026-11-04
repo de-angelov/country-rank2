@@ -1,0 +1,59 @@
+export schema RankingOrder =
+  | HighestFirst
+  | LowestFirst
+
+export getRankingOrderLabel = (order: RankingOrder) =>
+  match order
+    | HighestFirst => "Highest First"
+    | LowestFirst => "Lowest First"
+
+ts {
+export interface RankingOrderControlsProps {
+  currentOrder?: RankingOrder;
+  order?: RankingOrder;
+  onOrderChange?: (order: RankingOrder) => void;
+  onChange?: (order: RankingOrder) => void;
+}
+}
+
+export RankingOrderControls = (props: RankingOrderControlsProps) =>
+  active = props.order or props.currentOrder or HighestFirst
+  isHighest = match active
+    | HighestFirst => true
+    | LowestFirst => false
+  handleSelect = (nextOrder: RankingOrder) =>
+    when (props.onOrderChange) {
+      props.onOrderChange(nextOrder)
+    }
+    when (props.onChange) {
+      props.onChange(nextOrder)
+    }
+    => nextOrder
+  highestClass = match active
+    | HighestFirst => "px-3 py-1.5 text-sm font-semibold border-2 border-black bg-black text-white rounded cursor-pointer transition-colors"
+    | LowestFirst => "px-3 py-1.5 text-sm font-semibold border-2 border-black bg-white text-black hover:bg-neutral-100 rounded cursor-pointer transition-colors"
+  lowestClass = match active
+    | HighestFirst => "px-3 py-1.5 text-sm font-semibold border-2 border-black bg-white text-black hover:bg-neutral-100 rounded cursor-pointer transition-colors"
+    | LowestFirst => "px-3 py-1.5 text-sm font-semibold border-2 border-black bg-black text-white rounded cursor-pointer transition-colors"
+  => <div className="inline-flex gap-2 items-center" role="group" aria-label="Ranking order">
+    <button
+      type="button"
+      className={highestClass}
+      aria-pressed={isHighest}
+      onClick={() => handleSelect(HighestFirst)}
+    >
+      Highest First
+    </button>
+    <button
+      type="button"
+      className={lowestClass}
+      aria-pressed={not isHighest}
+      onClick={() => handleSelect(LowestFirst)}
+    >
+      Lowest First
+    </button>
+  </div>
+
+ts {
+export default RankingOrderControls;
+}
