@@ -1,14 +1,14 @@
-import type { Country } from "../../countries/country.js"
+import { Country } from "../../countries/country.js"
 import { cn } from "../../lib/utils.js"
 import { Button } from "../ui/button.js"
 import { Card } from "../ui/card.js"
 import { Progress } from "../ui/progress.js"
 
-export schema CountryCardProps = ts { {
-  country: Country;
-  className?: string;
-  includeVoteIconSprite?: boolean;
-} }
+export schema CountryCardProps = {
+  country: Country
+  className: String = ""
+  includeVoteIconSprite: Boolean = true
+}
 
 export schema VoteIconProps = {
   voteType: String
