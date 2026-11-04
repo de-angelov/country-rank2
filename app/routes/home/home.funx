@@ -1,0 +1,6 @@
+export Home = () =>
+  <main>Country Rank 2</main>
+
+ts {
+export default Home;
+}
