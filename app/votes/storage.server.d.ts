@@ -27,6 +27,8 @@ export type RedisVoteStorageError =
       cause: unknown;
     }>;
 
+export declare const voteTotalsKey: (voteKind: VoteKind) => string;
+
 export declare const readAllCountryVoteTotals: () => Effect.Effect<
   VoteTotalsByCountry,
   RedisVoteStorageError
