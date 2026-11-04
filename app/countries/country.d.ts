@@ -9,3 +9,5 @@ export type Country = {
 };
 
 export type VoteKind = "Like" | "Dislike";
+export const Like: VoteKind;
+export const Dislike: VoteKind;
