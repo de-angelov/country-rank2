@@ -5,4 +5,3 @@ export interface AppShellProps {
 }
 
 export declare const AppShell: (props: AppShellProps) => JSX.Element;
-export default AppShell;
