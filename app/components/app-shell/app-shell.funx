@@ -1,10 +1,6 @@
 import { Link } from "react-router"
-
-ts {
-import type { ReactNode } from "react";
-}
-
-export schema AppShellProps = { children: Unknown }
+import type { ReactNode } from "react"
+export schema AppShellProps = { children: String }
 
 export AppShell = (props: { children: ReactNode }) =>
   <div className="min-h-screen flex flex-col bg-background text-foreground font-sans">
