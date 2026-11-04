@@ -4,7 +4,6 @@ import { renderToString } from "react-dom/server";
 
 import {
   CountryCard,
-  CountryCardVoteIconSprite,
   getCountryCardFlagImageUrl,
 } from "../app/components/country-card/country-card.funx";
 import {
