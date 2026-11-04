@@ -72,110 +72,110 @@ ts {
       connectionFailureMessage: "Failed to connect to Redis vote storage.",
     });
 
-    const withValidCountryCode = <Value extends unknown>(
-      countryCode: string,
-      fn: (normalizedCountryCode: string) => Effect.Effect<Value, RedisVoteStorageError>
-    ): Effect.Effect<Value, RedisVoteStorageError> => {
-      const normalizedCountryCode = countryCode.trim().toUpperCase();
-
-      if (!countryCodePattern.test(normalizedCountryCode)) {
+    const validateCountryCode = (
+      countryCode: string
+    ): Effect.Effect<string, RedisVoteStorageError> => {
+      const normalized = countryCode.trim().toUpperCase();
+      if (!countryCodePattern.test(normalized)) {
         return Effect.fail({
           code: "invalid_country_code",
           message: "Country code must be a two-letter ISO country code.",
           countryCode,
         });
       }
-
-      return fn(normalizedCountryCode);
+      return Effect.succeed(normalized);
     };
+
+    const runRedis = <A,>(
+      tryFn: () => Promise<A>,
+      message: string
+    ): Effect.Effect<A, RedisVoteStorageError> =>
+      Effect.tryPromise({
+        try: tryFn,
+        catch: (cause): RedisVoteStorageError => ({
+          code: "redis_command_failed",
+          message,
+          cause,
+        }),
+      });
 
     const readCountryVoteTotals = (
       countryCode: string
     ): Effect.Effect<VoteTotals, RedisVoteStorageError> =>
-      withValidCountryCode(countryCode, (normalizedCountryCode) =>
-        getClient().pipe(
-          Effect.flatMap((client) =>
-            Effect.tryPromise({
-              try: () =>
-                Promise.all([
-                  client.hGet(voteTotalsKey("like"), normalizedCountryCode),
-                  client.hGet(voteTotalsKey("dislike"), normalizedCountryCode),
-                ]),
-              catch: (cause) => ({
-                code: "redis_command_failed" as const,
-                message: "Failed to read country vote totals from Redis.",
-                cause,
-              }),
-            })
+      Effect.gen(function* () {
+        const normalized = yield* validateCountryCode(countryCode);
+        const client = yield* getClient();
+
+        const [likes, dislikes] = yield* Effect.all([
+          runRedis(
+            () => client.hGet(voteTotalsKey("like"), normalized),
+            "Failed to read country vote totals from Redis."
           ),
-          Effect.map(([likes, dislikes]) => ({
-            countryCode: normalizedCountryCode,
-            likes: Number(likes ?? 0),
-            dislikes: Number(dislikes ?? 0),
-          }))
-        )
-      );
+          runRedis(
+            () => client.hGet(voteTotalsKey("dislike"), normalized),
+            "Failed to read country vote totals from Redis."
+          ),
+        ]);
+
+        return {
+          countryCode: normalized,
+          likes: Number(likes ?? 0),
+          dislikes: Number(dislikes ?? 0),
+        };
+      });
 
     const readAllCountryVoteTotals = (): Effect.Effect<
       VoteTotalsByCountry,
       RedisVoteStorageError
     > =>
-      getClient().pipe(
-        Effect.flatMap((client) =>
-          Effect.tryPromise({
-            try: () =>
-              Promise.all([
-                client.hGetAll(voteTotalsKey("like")),
-                client.hGetAll(voteTotalsKey("dislike")),
-              ]),
-            catch: (cause) => ({
-              code: "redis_command_failed" as const,
-              message: "Failed to read country vote totals from Redis.",
-              cause,
-            }),
-          })
-        ),
-        Effect.map(([likesByCountry, dislikesByCountry]) => {
-          const likes = likesByCountry ?? {};
-          const dislikes = dislikesByCountry ?? {};
-          const countryCodes = new Set([
-            ...Object.keys(likes),
-            ...Object.keys(dislikes),
-          ]);
+      Effect.gen(function* () {
+        const client = yield* getClient();
 
-          return new Map(
-            [...countryCodes].map((countryCode) => [
-              countryCode,
-              {
-                countryCode,
-                likes: Number(likes[countryCode] ?? 0),
-                dislikes: Number(dislikes[countryCode] ?? 0),
-              },
-            ])
-          );
-        })
-      );
+        const [likesByCountry, dislikesByCountry] = yield* Effect.all([
+          runRedis(
+            () => client.hGetAll(voteTotalsKey("like")),
+            "Failed to read country vote totals from Redis."
+          ),
+          runRedis(
+            () => client.hGetAll(voteTotalsKey("dislike")),
+            "Failed to read country vote totals from Redis."
+          ),
+        ]);
+
+        const likes = likesByCountry ?? {};
+        const dislikes = dislikesByCountry ?? {};
+        const countryCodes = new Set([
+          ...Object.keys(likes),
+          ...Object.keys(dislikes),
+        ]);
+
+        return new Map(
+          [...countryCodes].map((code) => [
+            code,
+            {
+              countryCode: code,
+              likes: Number(likes[code] ?? 0),
+              dislikes: Number(dislikes[code] ?? 0),
+            },
+          ])
+        );
+      });
 
     const incrementCountryVoteTotal = (
       countryCode: string,
       voteKind: VoteKind
     ): Effect.Effect<VoteTotals, RedisVoteStorageError> =>
-      withValidCountryCode(countryCode, (normalizedCountryCode) =>
-        getClient().pipe(
-          Effect.flatMap((client) =>
-            Effect.tryPromise({
-              try: () =>
-                client.hIncrBy(voteTotalsKey(voteKind), normalizedCountryCode, 1),
-              catch: (cause) => ({
-                code: "redis_command_failed" as const,
-                message: "Failed to increment country vote total in Redis.",
-                cause,
-              }),
-            })
-          ),
-          Effect.flatMap(() => readCountryVoteTotals(normalizedCountryCode))
-        )
-      );
+      Effect.gen(function* () {
+        const normalized = yield* validateCountryCode(countryCode);
+        const client = yield* getClient();
+
+        yield* runRedis(
+          () => client.hIncrBy(voteTotalsKey(voteKind), normalized, 1),
+          "Failed to increment country vote total in Redis."
+        );
+
+        return yield* readCountryVoteTotals(normalized);
+      });
 
     return {
       readAllCountryVoteTotals,
