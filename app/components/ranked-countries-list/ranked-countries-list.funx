@@ -1,0 +1,84 @@
+ts {
+import * as React from "react";
+import {
+  CountryCard,
+  CountryCardVoteIconSprite,
+} from "../country-card/country-card.js";
+import type { Country } from "../../countries/country.js";
+import { cn } from "../../lib/utils.js";
+
+const styles = {
+  list: "grid list-none gap-5 p-0",
+  row: "grid gap-2 sm:grid-cols-[minmax(9rem,12rem)_minmax(0,1fr)] sm:items-stretch sm:gap-4 lg:grid-cols-[minmax(12rem,14rem)_minmax(0,1fr)]",
+  rankMarker:
+    "flex min-h-14 min-w-[4.5rem] items-center justify-center whitespace-nowrap rounded-base border-2 border-border px-4 py-2 text-7xl font-heading leading-none text-main-foreground shadow-shadow sm:h-full sm:min-h-full sm:px-4 sm:py-4",
+  rankTone: {
+    like: "bg-vote-like",
+    dislike: "bg-vote-dislike",
+  },
+} as const;
+
+export type RankTone = "like" | "dislike";
+export type RankNumberOrder = "highest-first" | "lowest-first" | { _tag: string };
+
+export function getDisplayedRankNumber({
+  index,
+  order,
+  total,
+}: {
+  index: number;
+  order: RankNumberOrder;
+  total: number;
+}) {
+  const isLowest =
+    order === "lowest-first" ||
+    (typeof order === "object" && order !== null && (order as { _tag?: string })._tag === "LowestFirst");
+
+  return isLowest ? total - index : index + 1;
+}
+
+export interface RankedCountriesListProps {
+  ariaLabel: string;
+  countries: readonly Country[];
+  rankNumberOrder?: RankNumberOrder;
+  rankTone: RankTone;
+}
+
+export function RankedCountriesList({
+  ariaLabel,
+  countries,
+  rankNumberOrder = "highest-first",
+  rankTone,
+}: RankedCountriesListProps) {
+  return (
+    <>
+      <CountryCardVoteIconSprite />
+      <ol className={styles.list} aria-label={ariaLabel}>
+        {countries.map((country, index) => {
+          const rankNumber = getDisplayedRankNumber({
+            index,
+            order: rankNumberOrder,
+            total: countries.length,
+          });
+
+          const toneClass = styles.rankTone[rankTone] ?? styles.rankTone.like;
+
+          return (
+            <li className={styles.row} key={country.code}>
+              <div
+                className={cn(styles.rankMarker, toneClass)}
+                aria-label={`Rank ${rankNumber}`}
+              >
+                {rankNumber}
+              </div>
+              <CountryCard country={country} includeVoteIconSprite={false} />
+            </li>
+          );
+        })}
+      </ol>
+    </>
+  );
+}
+
+export default RankedCountriesList;
+}
