@@ -1,173 +1,178 @@
-ts {
-import * as React from "react";
-import type { Country } from "../../countries/country.js";
-import { cn } from "../../lib/utils.js";
-import { Button } from "../ui/button.js";
-import { Card } from "../ui/card.js";
-import { Progress } from "../ui/progress.js";
+import { Country } from "../../countries/country.js"
+import { cn } from "../../lib/utils.js"
+import { Button } from "../ui/button.js"
+import { Card } from "../ui/card.js"
+import { Progress } from "../ui/progress.js"
 
-export type CountryCardProps = Readonly<{
-  country: Country;
-  className?: string;
-  includeVoteIconSprite?: boolean;
-}>;
-
-const numberFormatter = new Intl.NumberFormat("en-US");
-const voteIconSymbolIds = {
-  dislike: "country-card-thumbs-down",
-  like: "country-card-thumbs-up",
-} as const;
-
-export function CountryCardVoteIconSprite() {
-  return (
-    <svg
-      aria-hidden="true"
-      className="absolute size-0 overflow-hidden"
-      focusable="false"
-    >
-      <symbol
-        id={voteIconSymbolIds.like}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z" />
-        <path d="M7 10v12" />
-      </symbol>
-      <symbol
-        id={voteIconSymbolIds.dislike}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z" />
-        <path d="M17 14V2" />
-      </symbol>
-    </svg>
-  );
+export schema CountryCardProps = {
+  country: Country
+  className: String = ""
+  includeVoteIconSprite: Boolean = true
 }
 
-export function CountryCardVoteIcon({ voteType }: { voteType: "like" | "dislike" }) {
-  return (
-    <svg
-      aria-hidden="true"
-      className="size-4 shrink-0"
-      focusable="false"
+export schema VoteIconProps = {
+  voteType: String
+}
+
+export CountryCardVoteIconSprite = () =>
+  <svg
+    aria-hidden="true"
+    className="absolute size-0 overflow-hidden"
+    focusable="false"
+  >
+    <symbol
+      id="country-card-thumbs-up"
       viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
     >
-      <use href={`#${voteIconSymbolIds[voteType]}`} />
-    </svg>
-  );
+      <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z" />
+      <path d="M7 10v12" />
+    </symbol>
+    <symbol
+      id="country-card-thumbs-down"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z" />
+      <path d="M17 14V2" />
+    </symbol>
+  </svg>
+
+export CountryCardVoteIcon = (props: VoteIconProps) =>
+  symbolId = match props.voteType
+    | "dislike" => "country-card-thumbs-down"
+    | _ => "country-card-thumbs-up"
+  => <svg
+    aria-hidden="true"
+    className="size-4 shrink-0"
+    focusable="false"
+    viewBox="0 0 24 24"
+  >
+    <use href={"#" + symbolId} />
+  </svg>
+
+export schema CountryFlagInput = {
+  flagImageUrl: String
 }
 
-export function getCountryCardFlagImageUrl(country: { flagImageUrl: string; code?: string }) {
-  return country.flagImageUrl;
-}
+export getCountryCardFlagImageUrl = (country: CountryFlagInput): String => country.flagImageUrl
 
-export function CountryCard({
-  country,
-  className,
-  includeVoteIconSprite = true,
-}: CountryCardProps) {
-  const likeCount = numberFormatter.format(country.likes);
-  const dislikeCount = numberFormatter.format(country.dislikes);
-  const totalVotes = country.likes + country.dislikes;
-  const likeRatio = totalVotes === 0 ? 50 : (country.likes / totalVotes) * 100;
-  const roundedLikeRatio = totalVotes === 0 ? 0 : Math.round(likeRatio);
-  const roundedDislikeRatio = totalVotes === 0 ? 0 : 100 - roundedLikeRatio;
+export CountryCard = (props: CountryCardProps) =>
+  country = props.country
+  likeCount = country.likes["toLocaleString"]("en-US")
+  dislikeCount = country.dislikes["toLocaleString"]("en-US")
+  totalVotes = country.likes + country.dislikes
 
-  return (
-    <>
-      {includeVoteIconSprite ? <CountryCardVoteIconSprite /> : null}
-      <Card asChild>
-        <article className={cn("grid gap-4 bg-secondary-background p-4", className)}>
-          <div className="grid gap-4 sm:grid-cols-[minmax(7rem,10rem)_1fr] sm:items-center">
-            <div className="flex aspect-[4/3] min-h-24 items-center justify-center sm:min-h-0">
-              <div className="inline-flex max-h-full max-w-full rounded-base border-2 border-border">
-                <img
-                  src={getCountryCardFlagImageUrl(country)}
-                  alt={`${country.name} flag`}
-                  className="block h-auto max-h-full max-w-full object-contain"
-                  width="320"
-                  height="240"
-                  loading="lazy"
-                />
-              </div>
-            </div>
+  likeRatio = match totalVotes #= 0
+    | true => 50
+    | false => (country.likes / totalVotes) * 100
 
-            <div className="min-w-0">
-              <h2 className="truncate text-xl font-heading">{country.name}</h2>
-              <p className="mt-1 text-sm">{`Capital: ${country.capital}`}</p>
-              <p className="mt-2 text-sm text-foreground/75">
-                {country.factSnippet}
-              </p>
-            </div>
-          </div>
+  roundedLikeRatio = match totalVotes #= 0
+    | true => 0
+    | false => Math.round(likeRatio)
 
-          <div className="grid gap-3 border-t-2 border-border pt-4">
-            <div
-              className="grid gap-2 text-sm"
-              role="img"
-              aria-label={`${country.name} vote ratio: ${likeCount} likes (${roundedLikeRatio}%) and ${dislikeCount} dislikes (${roundedDislikeRatio}%).`}
-            >
-              <div className="flex items-center justify-between gap-3">
-                <span className="inline-flex items-center gap-1 font-heading">
-                  <CountryCardVoteIcon voteType="like" />
-                  {likeCount} likes
-                </span>
-                <span className="inline-flex items-center gap-1 font-heading">
-                  <CountryCardVoteIcon voteType="dislike" />
-                  {dislikeCount} dislikes
-                </span>
-              </div>
-              <Progress
-                value={likeRatio}
-                className="bg-vote-dislike shadow-none"
-                indicatorClassName="bg-vote-like transition-none"
-                aria-hidden="true"
+  roundedDislikeRatio = match totalVotes #= 0
+    | true => 0
+    | false => 100 - roundedLikeRatio
+
+  shouldIncludeSprite = match props.includeVoteIconSprite
+    | false => false
+    | _ => true
+
+  sprite = match shouldIncludeSprite
+    | true => <CountryCardVoteIconSprite />
+    | false => <></>
+
+  ratioAriaLabel = country.name + " vote ratio: " + likeCount + " likes (" + roundedLikeRatio + "%) and " + dislikeCount + " dislikes (" + roundedDislikeRatio + "%)."
+
+  => <>
+    {sprite}
+    <Card asChild>
+      <article className={cn("grid gap-4 bg-secondary-background p-4", props.className)}>
+        <div className="grid gap-4 sm:grid-cols-[minmax(7rem,10rem)_1fr] sm:items-center">
+          <div className="flex aspect-[4/3] min-h-24 items-center justify-center sm:min-h-0">
+            <div className="inline-flex max-h-full max-w-full rounded-base border-2 border-border">
+              <img
+                src={getCountryCardFlagImageUrl(country)}
+                alt={country.name + " flag"}
+                className="block h-auto max-h-full max-w-full object-contain"
+                width="320"
+                height="240"
+                loading="lazy"
               />
             </div>
-
-            <form method="post" action="/votes" className="grid grid-cols-2 gap-2">
-              <input type="hidden" name="countryCode" value={country.code} />
-              <input type="hidden" name="code" value={country.code} />
-              <Button
-                type="submit"
-                variant="like"
-                size="sm"
-                name="voteType"
-                value="like"
-                className="min-h-9 min-w-0 px-3"
-                aria-label={`Like ${country.name}`}
-              >
-                <CountryCardVoteIcon voteType="like" />
-                Like
-              </Button>
-              <Button
-                type="submit"
-                variant="dislike"
-                size="sm"
-                name="voteType"
-                value="dislike"
-                className="min-h-9 min-w-0 px-3"
-                aria-label={`Dislike ${country.name}`}
-              >
-                <CountryCardVoteIcon voteType="dislike" />
-                Dislike
-              </Button>
-            </form>
           </div>
-        </article>
-      </Card>
-    </>
-  );
-}
 
-export default CountryCard;
-}
+          <div className="min-w-0">
+            <h2 className="truncate text-xl font-heading">{country.name}</h2>
+            <p className="mt-1 text-sm">{"Capital: " + country.capital}</p>
+            <p className="mt-2 text-sm text-foreground/75">
+              {country.factSnippet}
+            </p>
+          </div>
+        </div>
+
+        <div className="grid gap-3 border-t-2 border-border pt-4">
+          <div
+            className="grid gap-2 text-sm"
+            role="img"
+            aria-label={ratioAriaLabel}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <span className="inline-flex items-center gap-1 font-heading">
+                <CountryCardVoteIcon voteType="like" />
+                {likeCount + " likes"}
+              </span>
+              <span className="inline-flex items-center gap-1 font-heading">
+                <CountryCardVoteIcon voteType="dislike" />
+                {dislikeCount + " dislikes"}
+              </span>
+            </div>
+            <Progress
+              value={likeRatio}
+              className="bg-vote-dislike shadow-none"
+              indicatorClassName="bg-vote-like transition-none"
+              aria-hidden="true"
+            />
+          </div>
+
+          <form method="post" action="/votes" className="grid grid-cols-2 gap-2">
+            <input type="hidden" name="countryCode" value={country.code} />
+            <input type="hidden" name="code" value={country.code} />
+            <Button
+              type="submit"
+              variant="like"
+              size="sm"
+              name="voteType"
+              value="like"
+              className="min-h-9 min-w-0 px-3"
+              aria-label={"Like " + country.name}
+            >
+              <CountryCardVoteIcon voteType="like" />
+              Like
+            </Button>
+            <Button
+              type="submit"
+              variant="dislike"
+              size="sm"
+              name="voteType"
+              value="dislike"
+              className="min-h-9 min-w-0 px-3"
+              aria-label={"Dislike " + country.name}
+            >
+              <CountryCardVoteIcon voteType="dislike" />
+              Dislike
+            </Button>
+          </form>
+        </div>
+      </article>
+    </Card>
+  </>
