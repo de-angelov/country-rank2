@@ -1,0 +1,155 @@
+import { Effect } from "effect"
+
+export logLevelEnvVar = "LOG_LEVEL"
+export redactedLogValue = "[Redacted]"
+export defaultLogLevel = "info"
+
+ts {
+  import pino, { type DestinationStream, type Logger } from "pino";
+
+  export const supportedLogLevels = [
+    "trace",
+    "debug",
+    "info",
+    "warn",
+    "error",
+    "fatal",
+    "silent",
+  ] as const;
+
+  export type SupportedLogLevel = (typeof supportedLogLevels)[number];
+  export type ApplicationLogger = Pick<Logger, "debug" | "info" | "warn" | "error">;
+
+  const supportedLogLevelSet = new Set<string>(supportedLogLevels);
+
+  export const sensitiveLogRedactionPaths = [
+    "authorization",
+    "Authorization",
+    "cookie",
+    "Cookie",
+    "cookies",
+    "headers.authorization",
+    "headers.Authorization",
+    "headers.cookie",
+    "headers.Cookie",
+    'headers["set-cookie"]',
+    'headers["Set-Cookie"]',
+    'headers["stripe-signature"]',
+    'headers["Stripe-Signature"]',
+    "req.headers.authorization",
+    "req.headers.Authorization",
+    "req.headers.cookie",
+    "req.headers.Cookie",
+    'req.headers["stripe-signature"]',
+    'req.headers["Stripe-Signature"]',
+    "request.headers.authorization",
+    "request.headers.Authorization",
+    "request.headers.cookie",
+    "request.headers.Cookie",
+    'request.headers["stripe-signature"]',
+    'request.headers["Stripe-Signature"]',
+    "stripeSignature",
+    "stripe_signature",
+    "STRIPE_SECRET_KEY",
+    "stripeSecretKey",
+    "stripe_secret_key",
+    "stripe.secretKey",
+    "stripe.secret_key",
+    "stripe.apiKey",
+    "stripe.api_key",
+    "stripeApiKey",
+    "stripe_api_key",
+    "STRIPE_WEBHOOK_SECRET",
+    "stripeWebhookSecret",
+    "stripe_webhook_secret",
+    "webhookSecret",
+    "webhook_secret",
+    "stripe.webhookSecret",
+    "stripe.webhook_secret",
+    "rawBody",
+    "rawRequestBody",
+    "rawWebhookPayload",
+    "body.raw",
+    "payload.raw",
+    "req.rawBody",
+    "request.rawBody",
+    "stripe.rawPayload",
+    "stripe.rawWebhookPayload",
+    "card",
+    "cardNumber",
+    "card_number",
+    "cvc",
+    "cvv",
+    "paymentMethod",
+    "payment_method",
+    "paymentMethodData",
+    "payment_method_data",
+  ] as const;
+
+  export const getLogLevel = (env?: NodeJS.ProcessEnv): SupportedLogLevel => {
+    const rawEnv = env ?? (typeof process !== "undefined" ? process.env : undefined);
+    const configuredLevel = rawEnv?.[logLevelEnvVar]?.trim().toLowerCase();
+    if (configuredLevel && supportedLogLevelSet.has(configuredLevel)) {
+      return configuredLevel as SupportedLogLevel;
+    }
+    return defaultLogLevel as SupportedLogLevel;
+  };
+
+  export const createApplicationLogger = (
+    options: Readonly<{
+      env?: NodeJS.ProcessEnv;
+      stream?: DestinationStream;
+    }> = {}
+  ): Logger =>
+    pino(
+      {
+        level: getLogLevel(options.env),
+        redact: {
+          paths: [...sensitiveLogRedactionPaths],
+          censor: redactedLogValue,
+        },
+      },
+      options.stream
+    );
+
+  let defaultApplicationLogger: Logger | undefined;
+
+  export const getDefaultApplicationLogger = (): Logger => {
+    defaultApplicationLogger ??= createApplicationLogger();
+    return defaultApplicationLogger;
+  };
+
+  export const logger: ApplicationLogger = {
+    debug: (...args: Parameters<ApplicationLogger["debug"]>) =>
+      getDefaultApplicationLogger().debug(...args),
+    info: (...args: Parameters<ApplicationLogger["info"]>) =>
+      getDefaultApplicationLogger().info(...args),
+    warn: (...args: Parameters<ApplicationLogger["warn"]>) =>
+      getDefaultApplicationLogger().warn(...args),
+    error: (...args: Parameters<ApplicationLogger["error"]>) =>
+      getDefaultApplicationLogger().error(...args),
+  };
+}
+
+export js getLogger = () =>
+  effect {
+    => logger
+  }
+
+export js logInfo = (message: String) =>
+  effect {
+    _ <- Effect.sync(() => logger.info(message))
+    => message
+  }
+
+export js logWarn = (message: String) =>
+  effect {
+    _ <- Effect.sync(() => logger.warn(message))
+    => message
+  }
+
+export js logError = (message: String) =>
+  effect {
+    _ <- Effect.sync(() => logger["error"](message))
+    => message
+  }
