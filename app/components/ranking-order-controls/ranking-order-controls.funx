@@ -7,8 +7,6 @@ export getRankingOrderLabel = (order: RankingOrder) =>
     | HighestFirst => "Highest First"
     | LowestFirst => "Lowest First"
 
-export schema RankingOrderControlsProps = { order: String }
-
 export RankingOrderControls = (props: { order: RankingOrder, onOrderChange: (order: RankingOrder) => Void }) =>
   active = props.order
   isHighest = match active

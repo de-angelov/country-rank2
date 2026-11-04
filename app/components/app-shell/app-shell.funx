@@ -1,7 +1,5 @@
 import { Link } from "react-router"
 import type { ReactNode } from "react"
-export schema AppShellProps = { children: String }
-
 export AppShell = (props: { children: ReactNode }) =>
   <div className="min-h-screen flex flex-col bg-background text-foreground font-sans">
     <header className="border-b-2 border-black bg-white shadow-[var(--shadow)]">
