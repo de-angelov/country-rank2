@@ -71,7 +71,7 @@ export function RankedCountriesList({
               >
                 {rankNumber}
               </div>
-              <CountryCard country={country} className="" includeVoteIconSprite={false} />
+              <CountryCard country={country} includeVoteIconSprite={false} />
             </li>
           );
         })}
