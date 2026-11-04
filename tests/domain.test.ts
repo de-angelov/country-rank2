@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Country, countryFixtures, fixtures, VoteKind, Like, Dislike } from "../app/countries/index.fun";
+import { Country, countryFixtures, fixtures, Like, Dislike } from "../app/countries/index.fun";
 
 describe("domain schema and fixtures", () => {
   it("exports Country schema and VoteKind", () => {
