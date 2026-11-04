@@ -1,6 +1,124 @@
-export TopDisliked = () =>
-  <main>Top Disliked Countries</main>
+import { AppShell } from "../../components/app-shell/app-shell.js"
+import { RankingOrderControls, HighestFirst, LowestFirst } from "../../components/ranking-order-controls/ranking-order-controls.js"
+import { RankedCountriesList } from "../../components/ranked-countries-list/ranked-countries-list.js"
 
 ts {
-export default TopDisliked;
+  import * as React from "react";
+  import { useLoaderData, useSearchParams } from "react-router";
+  import type { Country } from "../../countries/country.js";
+  import type { RankingOrder } from "../../components/ranking-order-controls/ranking-order-controls.js";
+  import {
+    loader,
+    loadTopDislikedRouteData,
+    sortCountriesByDislikes,
+    isLowestFirst,
+  } from "./top-disliked.server.js";
+
+  export { loader, loadTopDislikedRouteData };
+
+  export interface TopDislikedProps {
+    countries?: readonly Country[];
+    initialOrder?: RankingOrder;
+  }
+
+  export function TopDisliked(props?: TopDislikedProps) {
+    const loaderData = (() => {
+      try {
+        return useLoaderData() as { countries?: Country[] } | Country[] | undefined;
+      } catch {
+        return undefined;
+      }
+    })();
+
+    const searchParams = (() => {
+      try {
+        const [params] = useSearchParams();
+        return params;
+      } catch {
+        return undefined;
+      }
+    })();
+
+    const [, setSearchParams] = (() => {
+      try {
+        return useSearchParams();
+      } catch {
+        return [undefined, undefined];
+      }
+    })();
+
+    const [order, setOrder] = React.useState<RankingOrder>(() => {
+      if (props?.initialOrder) return props.initialOrder;
+      if (searchParams && searchParams.get("order") === "lowest-first") {
+        return LowestFirst;
+      }
+      return HighestFirst;
+    });
+
+    const countries =
+      props?.countries ??
+      (Array.isArray(loaderData) ? loaderData : loaderData?.countries) ??
+      [];
+
+    const lowest = isLowestFirst(order);
+
+    const displayedCountries = React.useMemo(() => {
+      return sortCountriesByDislikes(countries, order);
+    }, [countries, order]);
+
+    const handleOrderChange = (nextOrder: RankingOrder) => {
+      setOrder(nextOrder);
+      if (typeof setSearchParams === "function") {
+        const isLowest = isLowestFirst(nextOrder);
+        setSearchParams(
+          (prev) => {
+            const next = new URLSearchParams(prev);
+            if (isLowest) {
+              next.set("order", "lowest-first");
+            } else {
+              next.delete("order");
+            }
+            return next;
+          },
+          { replace: true }
+        );
+      }
+    };
+
+    return (
+      <AppShell>
+        <div className="space-y-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b-2 border-black pb-4">
+            <div>
+              <h1 className="text-3xl font-black tracking-tight sm:text-4xl">
+                Top Disliked Countries
+              </h1>
+              <p className="mt-1 text-sm font-medium text-neutral-700">
+                Community picks ranked by total dislikes
+              </p>
+            </div>
+            <RankingOrderControls
+              order={order}
+              onOrderChange={handleOrderChange}
+            />
+          </div>
+
+          {displayedCountries.length === 0 ? (
+            <p className="py-12 text-center text-sm font-semibold text-neutral-600">
+              No countries available.
+            </p>
+          ) : (
+            <RankedCountriesList
+              ariaLabel="Top Disliked Countries"
+              countries={displayedCountries}
+              rankNumberOrder={lowest ? "lowest-first" : "highest-first"}
+              rankTone="dislike"
+            />
+          )}
+        </div>
+      </AppShell>
+    );
+  }
+
+  export default TopDisliked;
 }
