@@ -99,6 +99,7 @@ ts {
             </div>
             <RankingOrderControls
               order={order}
+              currentOrder={order}
               onOrderChange={handleOrderChange}
             />
           </div>

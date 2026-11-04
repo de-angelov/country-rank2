@@ -2,15 +2,13 @@ export schema RankingOrder =
   | HighestFirst
   | LowestFirst
 
-export schema RankingOrderControlsProps = { order: String, onOrderChange: Unknown }
-
 export getRankingOrderLabel = (order: RankingOrder) =>
   match order
     | HighestFirst => "Highest First"
     | LowestFirst => "Lowest First"
 
-export RankingOrderControls = (props: { order: RankingOrder, onOrderChange: (order: RankingOrder) => Void }) =>
-  active = props.order
+export RankingOrderControls = (props: { order: RankingOrder, currentOrder: RankingOrder, onOrderChange: (order: RankingOrder) => Void }) =>
+  active = props.order or props.currentOrder or HighestFirst
   isHighest = match active
     | HighestFirst => true
     | LowestFirst => false

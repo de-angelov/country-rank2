@@ -149,4 +149,3 @@ export Home = (props: HomeProps) =>
     </div>
   </AppShell>
 
-export default Home
