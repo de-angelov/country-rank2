@@ -6,8 +6,27 @@ import { funscript } from "funscript/plugins/vite";
 
 export default defineConfig({
   esbuild: {
-    include: /\.[jt]sx?$|\.funx$/,
+    include: /\.[jt]sx?$|\.funx?$/,
     loader: "tsx",
   },
-  plugins: [funscript(), tailwindcss(), reactRouter(), tsconfigPaths()],
+  plugins: [
+    funscript(),
+    {
+      name: "resolve-funscript-js",
+      enforce: "pre",
+      async resolveId(source, importer) {
+        if (source.endsWith(".js") && importer) {
+          const funCandidate = source.replace(/\.js$/, ".fun");
+          const funxCandidate = source.replace(/\.js$/, ".funx");
+          const resolved = await this.resolve(funCandidate, importer, { skipSelf: true });
+          if (resolved) return resolved;
+          const resolvedX = await this.resolve(funxCandidate, importer, { skipSelf: true });
+          if (resolvedX) return resolvedX;
+        }
+      },
+    },
+    tailwindcss(),
+    reactRouter(),
+    tsconfigPaths(),
+  ],
 });
