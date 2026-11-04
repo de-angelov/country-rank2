@@ -1,6 +1,173 @@
-export Home = () =>
-  <main>Country Rank 2</main>
+import { AppShell } from "../../components/app-shell/app-shell.js"
+import { RankedCountriesList } from "../../components/ranked-countries-list/ranked-countries-list.js"
 
 ts {
-export default Home;
+  import * as React from "react";
+  import { useLoaderData, useSearchParams } from "react-router";
+  import type { Country } from "../../countries/country.js";
+  import { loader, loadHomeRouteData } from "./home.server.js";
+
+  export { loader, loadHomeRouteData };
+
+  export const SEARCH_DEBOUNCE_MS = 200;
+
+  const countryDisplayNameCollator = new Intl.Collator("en", {
+    sensitivity: "base",
+  });
+
+  export const sortCountriesByDisplayName = (
+    countries: ReadonlyArray<Country>
+  ): Array<Country> =>
+    [...countries].sort((left, right) => {
+      const nameOrder = countryDisplayNameCollator.compare(left.name, right.name);
+      return nameOrder === 0
+        ? left.code.localeCompare(right.code, "en")
+        : nameOrder;
+    });
+
+  export const filterCountriesByName = (
+    countries: ReadonlyArray<Country>,
+    searchQuery: string
+  ): Array<Country> => {
+    const normalizedQuery = searchQuery.trim().toLocaleLowerCase();
+    if (normalizedQuery.length === 0) {
+      return [...countries];
+    }
+    return countries.filter((country) =>
+      country.name.toLocaleLowerCase().includes(normalizedQuery)
+    );
+  };
+
+  export interface HomeProps {
+    countries?: readonly Country[];
+    initialSearch?: string;
+  }
+
+  export function Home(props?: HomeProps) {
+    const loaderData = (() => {
+      try {
+        return useLoaderData() as { countries?: Country[] } | Country[] | undefined;
+      } catch {
+        return undefined;
+      }
+    })();
+
+    const searchParams = (() => {
+      try {
+        const [params] = useSearchParams();
+        return params;
+      } catch {
+        return undefined;
+      }
+    })();
+
+    const [, setSearchParams] = (() => {
+      try {
+        return useSearchParams();
+      } catch {
+        return [undefined, undefined];
+      }
+    })();
+
+    const initialQuery =
+      props?.initialSearch ?? (searchParams ? searchParams.get("q") ?? "" : "");
+
+    const [searchInput, setSearchInput] = React.useState<string>(initialQuery);
+    const [debouncedQuery, setDebouncedQuery] = React.useState<string>(initialQuery);
+
+    const countries =
+      props?.countries ??
+      (Array.isArray(loaderData) ? loaderData : loaderData?.countries) ??
+      [];
+
+    const sortedCountries = React.useMemo(() => {
+      return sortCountriesByDisplayName(countries);
+    }, [countries]);
+
+    const displayedCountries = React.useMemo(() => {
+      return filterCountriesByName(sortedCountries, debouncedQuery);
+    }, [sortedCountries, debouncedQuery]);
+
+    React.useEffect(() => {
+      if (props?.initialSearch !== undefined) {
+        setSearchInput(props.initialSearch);
+        setDebouncedQuery(props.initialSearch);
+      }
+    }, [props?.initialSearch]);
+
+    React.useEffect(() => {
+      const timer = setTimeout(() => {
+        setDebouncedQuery(searchInput);
+        if (typeof setSearchParams === "function") {
+          const trimmed = searchInput.trim();
+          setSearchParams(
+            (prev) => {
+              const next = new URLSearchParams(prev);
+              if (trimmed) {
+                next.set("q", trimmed);
+              } else {
+                next.delete("q");
+              }
+              return next;
+            },
+            { replace: true }
+          );
+        }
+      }, SEARCH_DEBOUNCE_MS);
+
+      return () => {
+        clearTimeout(timer);
+      };
+    }, [searchInput, setSearchParams]);
+
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      setSearchInput(e.target.value);
+    };
+
+    return (
+      <AppShell>
+        <div className="space-y-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b-2 border-black pb-4">
+            <div>
+              <h1 className="text-3xl font-black tracking-tight sm:text-4xl">
+                Countries
+              </h1>
+              <p className="mt-1 text-sm font-medium text-neutral-700">
+                Browse and search country rankings
+              </p>
+            </div>
+            <div className="w-full sm:w-72">
+              <label htmlFor="country-search" className="sr-only">
+                Search countries
+              </label>
+              <input
+                id="country-search"
+                name="q"
+                type="search"
+                value={searchInput}
+                onChange={handleSearchChange}
+                placeholder="Search countries..."
+                aria-label="Search countries"
+                className="w-full rounded-base border-2 border-border bg-white px-3 py-2 text-sm font-medium placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-black shadow-shadow"
+              />
+            </div>
+          </div>
+
+          {displayedCountries.length === 0 ? (
+            <p className="py-12 text-center text-sm font-semibold text-neutral-600">
+              No countries matched.
+            </p>
+          ) : (
+            <RankedCountriesList
+              ariaLabel="Countries"
+              countries={displayedCountries}
+              rankTone="like"
+            />
+          )}
+        </div>
+      </AppShell>
+    );
+  }
+
+  export default Home;
 }
