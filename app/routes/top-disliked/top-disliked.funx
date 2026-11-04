@@ -1,0 +1,6 @@
+export TopDisliked = () =>
+  <main>Top Disliked Countries</main>
+
+ts {
+export default TopDisliked;
+}

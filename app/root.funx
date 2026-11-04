@@ -1,0 +1,30 @@
+import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router"
+
+ts {
+import type { ReactNode } from "react";
+import "./app.css";
+}
+
+export Layout = (props: { children: ReactNode }) =>
+  <html lang="en">
+    <head>
+      <meta charSet="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <Meta />
+      <Links />
+    </head>
+    <body>
+      {props.children}
+      <ScrollRestoration />
+      <Scripts />
+    </body>
+  </html>
+
+export App = () =>
+  <div className="app-shell-placeholder">
+    <Outlet />
+  </div>
+
+ts {
+export default App;
+}
