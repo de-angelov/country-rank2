@@ -2,6 +2,8 @@ export schema RankingOrder =
   | HighestFirst
   | LowestFirst
 
+export schema RankingOrderControlsProps = { order: String, onOrderChange: Unknown }
+
 export getRankingOrderLabel = (order: RankingOrder) =>
   match order
     | HighestFirst => "Highest First"
