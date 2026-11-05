@@ -1,56 +1,43 @@
 import { Effect } from "effect"
+import { Country } from "../../countries/country.js"
 import { readCountriesWithVoteTotals } from "../../countries/redis-totals.server.js"
+import { LowestFirst } from "../../components/ranking-order-controls/ranking-order-controls.js"
 
-ts {
-  import type { Country } from "../../countries/country.js";
-  import type { CountryVoteTotalsOptions } from "../../countries/redis-totals.server.js";
-  import type { RankingOrder } from "../../components/ranking-order-controls/ranking-order-controls.js";
-
-  export type RankingSortOrder = "highest-first" | "lowest-first" | RankingOrder;
-
-  export type TopLikedLoaderOptions = CountryVoteTotalsOptions & Readonly<{
-    order?: RankingSortOrder;
-  }>;
-
-  export interface TopLikedLoaderResult {
-    countries: Array<Country>;
-  }
-
-  export const isLowestFirst = (order?: RankingSortOrder): boolean => {
-    if (!order) return false;
-    if (order === "lowest-first") return true;
-    if (typeof order === "object" && "_tag" in order && order._tag === "LowestFirst") return true;
-    return false;
-  };
-
-  export const sortCountriesByLikesDescending = (
-    countries: ReadonlyArray<Country>
-  ): Array<Country> =>
-    [...countries].sort((a, b) => {
-      if (b.likes !== a.likes) {
-        return b.likes - a.likes;
-      }
-      return a.name.localeCompare(b.name);
-    });
-
-  export const sortCountriesByLikesAscending = (
-    countries: ReadonlyArray<Country>
-  ): Array<Country> =>
-    [...sortCountriesByLikesDescending(countries)].reverse();
-
-  export const sortCountriesByLikes = (
-    countries: ReadonlyArray<Country>,
-    order?: RankingSortOrder
-  ): Array<Country> =>
-    isLowestFirst(order)
-      ? sortCountriesByLikesAscending(countries)
-      : sortCountriesByLikesDescending(countries);
-
-  export const resolveTopLikedOptions = (rawOptions: unknown): TopLikedLoaderOptions =>
-    (rawOptions ?? {}) as TopLikedLoaderOptions;
+export schema TopLikedLoaderResult = {
+  countries: Array<Country>
 }
 
-export readTopLikedCountries = (options: Unknown) =>
+export schema TopLikedLoaderOptions = {
+  order: Unknown
+}
+
+export isLowestFirst = (order: Unknown): Boolean =>
+  match order
+    | "lowest-first" => true
+    | LowestFirst => true
+    | _ => false
+
+export sortCountriesByLikesDescending = (countries: Array<Country>) =>
+  sorted = countries.slice().sort((a, b) =>
+    difference = b.likes - a.likes
+    match difference #= 0
+      | true => a.name.localeCompare(b.name)
+      | false => difference
+  )
+  => sorted
+
+export sortCountriesByLikesAscending = (countries: Array<Country>) =>
+  sorted = sortCountriesByLikesDescending(countries)
+  => sorted.reverse()
+
+export sortCountriesByLikes = (countries: Array<Country>, order: Unknown) =>
+  match isLowestFirst(order)
+    | true => sortCountriesByLikesAscending(countries)
+    | false => sortCountriesByLikesDescending(countries)
+
+export resolveTopLikedOptions = (rawOptions: TopLikedLoaderOptions): TopLikedLoaderOptions => rawOptions
+
+export readTopLikedCountries = (options: TopLikedLoaderOptions) =>
   effect {
     resolved = resolveTopLikedOptions(options)
     countries <- readCountriesWithVoteTotals(resolved)
@@ -61,28 +48,23 @@ export readTopLikedCountries = (options: Unknown) =>
 export getTopLikedCountries = readTopLikedCountries
 export loadTopLikedCountries = readTopLikedCountries
 
-ts {
-  export const loadTopLikedRouteData = async (
-    options?: TopLikedLoaderOptions
-  ): Promise<TopLikedLoaderResult> => {
-    const countries = await Effect.runPromise(readTopLikedCountries(options));
-    return { countries };
-  };
+export wrapTopLikedCountries = (countries: Array<Country>) =>
+  result = { countries: countries }
+  => result
 
-  export const loader = async (
-    args?: { request?: Request } | unknown
-  ): Promise<TopLikedLoaderResult> => {
-    let order: RankingSortOrder | undefined;
-    if (args && typeof args === "object" && "request" in args) {
-      const maybeRequest = (args as { request?: unknown }).request;
-      if (maybeRequest instanceof Request) {
-        const url = new URL(maybeRequest.url);
-        const orderParam = url.searchParams.get("order");
-        if (orderParam === "lowest-first" || orderParam === "highest-first") {
-          order = orderParam;
-        }
-      }
-    }
-    return loadTopLikedRouteData({ order });
-  };
-}
+export loadTopLikedRouteData = (options: TopLikedLoaderOptions) =>
+  mapped = Effect.map(readTopLikedCountries(options), wrapTopLikedCountries)
+  => Effect.runPromise(mapped)
+
+export loader = (args: Object) =>
+  request = Reflect.get(args or {}, "request")
+  url = String(Reflect.get(request or {}, "url") or "http://localhost")
+  query = url.split("?")[1] or ""
+  queryWithoutHash = query.split("#")[0]
+  orderParameter = queryWithoutHash.split("&").find((parameter) => parameter.split("=")[0] #= "order") or ""
+  orderParam = orderParameter.split("=")[1] or ""
+  order = match orderParam
+    | "lowest-first" => "lowest-first"
+    | "highest-first" => "highest-first"
+    | _ => "highest-first"
+  => loadTopLikedRouteData({ order: order })

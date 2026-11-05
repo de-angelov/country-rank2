@@ -192,6 +192,22 @@ describe("top-liked server loader and Effect workflow", () => {
     const highestData = await loader({ request: highestRequest });
     expect(Array.isArray(highestData.countries)).toBe(true);
 
+    const unrelatedParamRequest = new Request(
+      "https://countryrank.example.com/top-liked?note=order%3Dlowest-first&order=highest-first"
+    );
+    const unrelatedParamData = await loader({ request: unrelatedParamRequest });
+    expect(unrelatedParamData.countries.map((country) => country.code)).toEqual(
+      highestData.countries.map((country) => country.code)
+    );
+
+    const unrelatedValueRequest = new Request(
+      "https://countryrank.example.com/top-liked?order=almost-lowest-first"
+    );
+    const unrelatedValueData = await loader({ request: unrelatedValueRequest });
+    expect(unrelatedValueData.countries.map((country) => country.code)).toEqual(
+      highestData.countries.map((country) => country.code)
+    );
+
     const emptyArgsData = await loader();
     expect(Array.isArray(emptyArgsData.countries)).toBe(true);
   });
