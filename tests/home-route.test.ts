@@ -9,7 +9,7 @@ import {
   readHomeCountries,
   loadHomeRouteData,
   loader,
-} from "../app/routes/home/home.server.fun";
+} from "../app/routes/home/home.server.tsx";
 import {
   Home,
   filterCountriesByName,
