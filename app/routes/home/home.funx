@@ -112,6 +112,7 @@ export Home = (props: HomeProps) =>
     | false => <RankedCountriesList
         ariaLabel="Countries"
         countries={displayedCountries}
+        rankNumberOrder="highest-first"
         rankTone="like"
       />
     | true => <p className="py-12 text-center text-sm font-semibold text-neutral-600">
