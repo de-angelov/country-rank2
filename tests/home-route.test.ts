@@ -159,6 +159,13 @@ describe("home server loader", () => {
     expect(data.countries).toHaveLength(mockCountries.length);
   });
 
+  it("loadHomeRouteData accepts omitted options and uses the default catalog", async () => {
+    const data = await loadHomeRouteData();
+
+    expect(data).toHaveProperty("countries");
+    expect(data.countries.length).toBeGreaterThan(0);
+  });
+
   it("loadHomeRouteData gracefully falls back to zero totals on failure", async () => {
     const data = await loadHomeRouteData({
       fixtures: mockCountries,

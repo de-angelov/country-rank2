@@ -8,12 +8,12 @@ export schema HomeLoaderResult = {
 export schema HomeLoaderOptions = CountryVoteTotalsOptions
 export schema HomeRouteData = HomeLoaderResult
 
-export readHomeCountries = (options: CountryVoteTotalsOptions) => readCountriesWithVoteTotals(options)
+export readHomeCountries = (options: Unknown) => readCountriesWithVoteTotals(options)
 
 export getHomeCountries = readHomeCountries
 export loadHomeCountries = readHomeCountries
 
-export loadHomeRouteData = (options: CountryVoteTotalsOptions) =>
+export loadHomeRouteData = (options: Unknown) =>
   effect {
     countries <- readHomeCountries(options)
     => { countries: countries }
