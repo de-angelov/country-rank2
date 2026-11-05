@@ -1,3 +1,5 @@
+import console from "node:console";
+import process from "node:process";
 import { readdir, readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import ts from "typescript";

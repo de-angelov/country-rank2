@@ -90,6 +90,12 @@ describe("RankingOrderControls component", () => {
     expect(html).toContain('aria-pressed="true"');
   });
 
+  it("allows selecting an order when no callback is provided", () => {
+    const element = RankingOrderControls({ currentOrder: HighestFirst });
+    const [, lowestBtn] = element.props.children;
+    expect(() => lowestBtn.props.onClick()).not.toThrow();
+  });
+
   it("triggers onOrderChange callback with corresponding variant on button click", () => {
     const onOrderChange = vi.fn();
     const element = RankingOrderControls({

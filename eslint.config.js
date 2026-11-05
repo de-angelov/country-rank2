@@ -7,6 +7,7 @@ export default tseslint.config(
     ignores: [
       "build/**",
       ".react-router/**",
+      ".funscript/**",
       "node_modules/**",
       "**/*.d.ts",
       "**/*.fun",
