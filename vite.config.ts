@@ -10,21 +10,7 @@ export default defineConfig({
     loader: "tsx",
   },
   plugins: [
-    funscript(),
-    {
-      name: "resolve-funscript-js",
-      enforce: "pre",
-      async resolveId(source, importer) {
-        if (source.endsWith(".js") && importer) {
-          const funCandidate = source.replace(/\.js$/, ".fun");
-          const funxCandidate = source.replace(/\.js$/, ".funx");
-          const resolved = await this.resolve(funCandidate, importer, { skipSelf: true });
-          if (resolved) return resolved;
-          const resolvedX = await this.resolve(funxCandidate, importer, { skipSelf: true });
-          if (resolvedX) return resolvedX;
-        }
-      },
-    },
+    funscript({ types: {} }),
     {
       name: "reject-server-modules-in-client",
       apply: "build",

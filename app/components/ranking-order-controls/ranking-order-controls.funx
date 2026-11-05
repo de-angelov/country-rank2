@@ -12,8 +12,11 @@ export RankingOrderControls = (props: { order: RankingOrder, currentOrder: Ranki
   isHighest = match active
     | HighestFirst => true
     | LowestFirst => false
+  ignoreOrderChange = (nextOrder: RankingOrder) =>
+    => nextOrder
+  onOrderChange = props.onOrderChange or ignoreOrderChange
   handleSelect = (nextOrder: RankingOrder) =>
-    props.onOrderChange(nextOrder)
+    onOrderChange(nextOrder)
     => nextOrder
   highestClass = match active
     | HighestFirst => "px-3 py-1.5 text-sm font-semibold border-2 border-black bg-black text-white rounded cursor-pointer transition-colors"

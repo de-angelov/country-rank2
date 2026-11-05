@@ -1,3 +1,5 @@
+import { loader as serverLoader } from "./top-liked.server.js"
+export loader = serverLoader
 import { AppShell } from "../../components/app-shell/app-shell.js"
 import { RankingOrderControls, HighestFirst, LowestFirst } from "../../components/ranking-order-controls/ranking-order-controls.js"
 import { RankedCountriesList } from "../../components/ranked-countries-list/ranked-countries-list.js"
