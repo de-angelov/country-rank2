@@ -1,8 +1,4 @@
-ts {
-import { cx } from "class-variance-authority";
-import { twMerge } from "tailwind-merge";
+import { cx } from "class-variance-authority"
+import { twMerge } from "tailwind-merge"
 
-export function cn(...inputs: Parameters<typeof cx>) {
-  return twMerge(cx(...inputs));
-}
-}
+export cn = (first: String, second: String) => twMerge(cx(first, second))
