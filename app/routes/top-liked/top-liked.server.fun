@@ -11,14 +11,6 @@ export schema TopLikedLoaderOptions = {
   order: Unknown
 }
 
-export schema TopLikedRequest = {
-  url: String
-}
-
-export schema TopLikedLoaderArgs = {
-  request: TopLikedRequest
-}
-
 export isLowestFirst = (order: Unknown): Boolean =>
   match order
     | "lowest-first" => true
@@ -64,10 +56,15 @@ export loadTopLikedRouteData = (options: TopLikedLoaderOptions) =>
   mapped = Effect.map(readTopLikedCountries(options), wrapTopLikedCountries)
   => Effect.runPromise(mapped)
 
-export loader = (args: TopLikedLoaderArgs) =>
-  resolvedArgs = args or { request: { url: "http://localhost" } }
-  request = resolvedArgs.request
-  order = match request.url.includes("order=lowest-first")
-    | true => "lowest-first"
-    | false => "highest-first"
+export loader = (args: Object) =>
+  request = Reflect.get(args or {}, "request")
+  url = String(Reflect.get(request or {}, "url") or "http://localhost")
+  query = url.split("?")[1] or ""
+  queryWithoutHash = query.split("#")[0]
+  orderParameter = queryWithoutHash.split("&").find((parameter) => parameter.split("=")[0] #= "order") or ""
+  orderParam = orderParameter.split("=")[1] or ""
+  order = match orderParam
+    | "lowest-first" => "lowest-first"
+    | "highest-first" => "highest-first"
+    | _ => "highest-first"
   => loadTopLikedRouteData({ order: order })
