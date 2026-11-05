@@ -1,50 +1,22 @@
-import { Effect } from "effect"
+import { Country } from "../../countries/index.js"
+import type { CountryVoteTotalsOptions } from "../../countries/index.js"
 import { readCountriesWithVoteTotals } from "../../countries/redis-totals.server.js"
 
-ts {
-  import type { Country } from "../../countries/country.js";
-  import type { CountryVoteTotalsOptions } from "../../countries/redis-totals.server.js";
-  import { countryFixtures } from "../../countries/fixtures.js";
-  import { createFallbackCountries } from "../../countries/redis-totals.server.js";
-
-  export type HomeLoaderOptions = CountryVoteTotalsOptions;
-
-  export interface HomeLoaderResult {
-    countries: Array<Country>;
-  }
-
-  export type HomeRouteData = HomeLoaderResult;
-
-  export const resolveHomeOptions = (rawOptions: unknown): HomeLoaderOptions =>
-    (rawOptions ?? {}) as HomeLoaderOptions;
+export schema HomeLoaderResult = {
+  countries: Array<Country>
 }
+export schema HomeLoaderOptions = CountryVoteTotalsOptions
+export schema HomeRouteData = HomeLoaderResult
 
-export readHomeCountries = (options: Unknown) =>
-  effect {
-    resolved = resolveHomeOptions(options)
-    countries <- readCountriesWithVoteTotals(resolved)
-    => countries
-  }
+export readHomeCountries = (options: Unknown) => readCountriesWithVoteTotals(options)
 
 export getHomeCountries = readHomeCountries
 export loadHomeCountries = readHomeCountries
 
-ts {
-  export const loadHomeRouteData = async (
-    options?: HomeLoaderOptions
-  ): Promise<HomeLoaderResult> => {
-    try {
-      const countries = await Effect.runPromise(readHomeCountries(options));
-      return { countries };
-    } catch {
-      const fixtures = options?.fixtures ?? countryFixtures;
-      return { countries: createFallbackCountries(fixtures) };
-    }
-  };
+export loadHomeRouteData = (options: Unknown) =>
+  effect {
+    countries <- readHomeCountries(options)
+    => { countries: countries }
+  }
 
-  export const loader = async (
-    _args?: { request?: Request } | unknown
-  ): Promise<HomeLoaderResult> => {
-    return loadHomeRouteData();
-  };
-}
+export loader = (_args: Unknown) => loadHomeRouteData({})
