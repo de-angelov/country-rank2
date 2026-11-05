@@ -2,11 +2,6 @@ import { useState, useMemo, useEffect } from "react"
 import { useLoaderData, useSearchParams } from "react-router"
 import { AppShell } from "../../components/app-shell/app-shell.js"
 import { RankedCountriesList } from "../../components/ranked-countries-list/ranked-countries-list.js"
-import { loader as serverLoader, loadHomeRouteData as serverLoadHomeRouteData } from "./home.server.js"
-
-export loader = serverLoader
-export loadHomeRouteData = serverLoadHomeRouteData
-
 export SEARCH_DEBOUNCE_MS = 200
 
 export sortCountriesByDisplayName = (countries: Array<Country>): Array<Country> =>

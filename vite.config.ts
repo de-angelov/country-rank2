@@ -25,6 +25,22 @@ export default defineConfig({
         }
       },
     },
+    {
+      name: "reject-server-modules-in-client",
+      apply: "build",
+      generateBundle(_options, bundle) {
+        if (this.environment.name !== "client") return;
+        for (const output of Object.values(bundle)) {
+          if (output.type !== "chunk") continue;
+          const serverModules = Object.keys(output.modules).filter((id) =>
+            /\.server\.(?:[cm]?[jt]sx?|funx?)(?:\?|$)/.test(id),
+          );
+          if (serverModules.length) {
+            this.error(`Server modules in client chunk ${output.fileName}: ${serverModules.join(", ")}`);
+          }
+        }
+      },
+    },
     tailwindcss(),
     reactRouter(),
     tsconfigPaths(),

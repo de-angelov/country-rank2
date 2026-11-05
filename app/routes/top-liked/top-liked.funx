@@ -7,14 +7,7 @@ ts {
   import { useLoaderData, useSearchParams } from "react-router";
   import type { Country } from "../../countries/country.js";
   import type { RankingOrder } from "../../components/ranking-order-controls/ranking-order-controls.js";
-  import {
-    loader,
-    loadTopLikedRouteData,
-    sortCountriesByLikes,
-    isLowestFirst,
-  } from "./top-liked.server.js";
-
-  export { loader, loadTopLikedRouteData };
+  import { sortCountriesByLikes, isLowestFirst } from "./ranking.js";
 
   export interface TopLikedProps {
     countries?: readonly Country[];

@@ -1,9 +1,6 @@
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router"
 
-ts {
-import type { ReactNode } from "react";
-import "./app.css";
-}
+import type { ReactNode } from "react"
 
 export Layout = (props: { children: ReactNode }) =>
   <html lang="en">
@@ -25,6 +22,4 @@ export App = () =>
     <Outlet />
   </div>
 
-ts {
-export default App;
-}
+export default App

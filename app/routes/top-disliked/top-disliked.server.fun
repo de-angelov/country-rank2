@@ -1,5 +1,5 @@
 import { Effect } from "effect"
-import { LowestFirst } from "../../components/ranking-order-controls/ranking-order-controls.js"
+import { isLowestFirst as sharedIsLowestFirst, sortCountriesByDislikesDescending as sharedSortCountriesByDislikesDescending, sortCountriesByDislikesAscending as sharedSortCountriesByDislikesAscending, sortCountriesByDislikes as sharedSortCountriesByDislikes } from "./ranking.js"
 import { Country } from "../../countries/index.js"
 import { readCountriesWithVoteTotals } from "../../countries/redis-totals.server.js"
 
@@ -11,27 +11,10 @@ export schema TopDislikedLoaderOptions = {
   order: Unknown
 }
 
-export isLowestFirst = (order: Unknown) =>
-  match order
-    | "lowest-first" => true
-    | LowestFirst => true
-    | _ => false
-
-dislikeComparator = (a: Country, b: Country) =>
-  match b.dislikes #! a.dislikes
-    | true => b.dislikes - a.dislikes
-    | false => a.name.localeCompare(b.name)
-
-export sortCountriesByDislikesDescending = (countries: Array<Country>) =>
-  => countries.slice().sort(dislikeComparator)
-
-export sortCountriesByDislikesAscending = (countries: Array<Country>) =>
-  => sortCountriesByDislikesDescending(countries).reverse()
-
-export sortCountriesByDislikes = (countries: Array<Country>, order: Unknown) =>
-  match isLowestFirst(order)
-    | true => sortCountriesByDislikesAscending(countries)
-    | false => sortCountriesByDislikesDescending(countries)
+export isLowestFirst = sharedIsLowestFirst
+export sortCountriesByDislikesDescending = sharedSortCountriesByDislikesDescending
+export sortCountriesByDislikesAscending = sharedSortCountriesByDislikesAscending
+export sortCountriesByDislikes = sharedSortCountriesByDislikes
 
 export resolveTopDislikedOptions = (rawOptions: Object) => rawOptions or { order: "highest-first" }
 
