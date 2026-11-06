@@ -1,3 +1,5 @@
+import { Option } from "effect"
+
 export schema RankingOrder =
   | HighestFirst
   | LowestFirst
@@ -7,14 +9,14 @@ export getRankingOrderLabel = (order: RankingOrder) =>
     | HighestFirst => "Highest First"
     | LowestFirst => "Lowest First"
 
-export RankingOrderControls = (props: { order: RankingOrder, currentOrder: RankingOrder, onOrderChange: (order: RankingOrder) => Void }) =>
-  active = props.order or props.currentOrder or HighestFirst
+export RankingOrderControls = (props: { order?: RankingOrder, currentOrder?: RankingOrder, onOrderChange?: (order: RankingOrder) => Void }) =>
+  active = Option.getOrElse(props.order, () => Option.getOrElse(props.currentOrder, () => HighestFirst))
   isHighest = match active
     | HighestFirst => true
     | LowestFirst => false
   ignoreOrderChange = (nextOrder: RankingOrder) =>
     => nextOrder
-  onOrderChange = props.onOrderChange or ignoreOrderChange
+  onOrderChange = Option.getOrElse(props.onOrderChange, () => ignoreOrderChange)
   handleSelect = (nextOrder: RankingOrder) =>
     onOrderChange(nextOrder)
     => nextOrder

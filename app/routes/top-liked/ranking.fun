@@ -1,11 +1,13 @@
 import { Country } from "../../countries/country.js"
 import { LowestFirst } from "../../components/ranking-order-controls/ranking-order-controls.js"
 
-export isLowestFirst = (order: Unknown): Boolean =>
+export isLowestFirst = (order?: Unknown): Boolean =>
   match order
-    | "lowest-first" => true
-    | LowestFirst => true
-    | _ => false
+    | Some(value) => match value
+      | "lowest-first" => true
+      | LowestFirst => true
+      | _ => false
+    | None => false
 
 export sortCountriesByLikesDescending = (countries: Array<Country>) =>
   sorted = countries.slice().sort((a, b) =>
@@ -20,7 +22,7 @@ export sortCountriesByLikesAscending = (countries: Array<Country>) =>
   sorted = sortCountriesByLikesDescending(countries)
   => sorted.reverse()
 
-export sortCountriesByLikes = (countries: Array<Country>, order: Unknown) =>
+export sortCountriesByLikes = (countries: Array<Country>, order: Unknown = "highest-first") =>
   match isLowestFirst(order)
     | true => sortCountriesByLikesAscending(countries)
     | false => sortCountriesByLikesDescending(countries)

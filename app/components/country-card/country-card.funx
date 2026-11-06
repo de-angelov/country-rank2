@@ -1,3 +1,4 @@
+import { Option } from "effect"
 import { Country } from "../../countries/country.js"
 import { cn } from "../../lib/utils.js"
 import { Button } from "../ui/button.js"
@@ -65,8 +66,9 @@ export schema CountryFlagInput = {
 
 export getCountryCardFlagImageUrl = (country: CountryFlagInput): String => country.flagImageUrl
 
-export CountryCard = (props: CountryCardProps) =>
+export CountryCard = (props: SchemaInput<CountryCardProps>) =>
   country = props.country
+  className = Option.getOrElse(Option.fromUndefinedOr(props.className), () => "")
   likeCount = country.likes["toLocaleString"]("en-US")
   dislikeCount = country.dislikes["toLocaleString"]("en-US")
   totalVotes = country.likes + country.dislikes
@@ -96,7 +98,7 @@ export CountryCard = (props: CountryCardProps) =>
   => <>
     {sprite}
     <Card asChild>
-      <article className={cn("grid gap-4 bg-secondary-background p-4", props.className)}>
+      <article className={cn("grid gap-4 bg-secondary-background p-4", className)}>
         <div className="grid gap-4 sm:grid-cols-[minmax(7rem,10rem)_1fr] sm:items-center">
           <div className="flex aspect-[4/3] min-h-24 items-center justify-center sm:min-h-0">
             <div className="inline-flex max-h-full max-w-full rounded-base border-2 border-border">

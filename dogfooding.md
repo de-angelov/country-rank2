@@ -1,6 +1,6 @@
 # FunScript dogfooding
 
-Observed against the bundled FunScript compiler from commit `886559d`.
+Observed against the bundled FunScript build from commit `5bafeaf`.
 
 ## Working: Vite and React Router routes
 
@@ -8,17 +8,15 @@ All four route entries are FunScript files. The Vite plugin compiles them in pla
 
 Native side-effect imports also work: `app/root.funx` imports the CSS directly. The former JavaScript route adapters have been removed.
 
-## Open: optional parameters and record fields
+## Optional inputs
 
-`npm run typecheck` now resolves the FunScript modules, revealing APIs whose actual optional inputs cannot be represented by the current FunScript syntax. For example, `CountryCard` accepts an omitted `className`, ranking helpers accept an omitted order, and loaders accept omitted arguments. The parser rejects both `(order?: Unknown)` and record fields such as `{ className?: String }`. A schema field with a default describes an optional encoded input but its decoded `Type` has a required property; using that type directly for React props therefore incorrectly requires callers to provide the defaulted property.
+Optional parameters now become real Effect `Option` values inside FunScript, and defaulted parameters accept omitted or `undefined` arguments. `SchemaInput<Name>` exposes a schema's encoded input type without implicitly decoding it; schema defaults are now applied during actual decoding. The ranking helpers and country/list components use these features. Optional handling does not validate values supplied by JavaScript; schema decoding is still required for runtime validation.
 
-The ranking controls support an omitted callback at runtime, including when a button is clicked, but their generated type still requires it. The top-liked loader options additionally need to describe injectable `readTotals` and fixtures. Do not suppress these errors or add companion `.d.ts` files: support for optional JavaScript-facing arguments and properties, and a native way to use a schema's input type, would allow the public types to match existing behavior.
+Inline record parameters now support optional callback props and produce real Effect `Option` values inside FunScript. The ranking controls use this syntax. For safety, the compiler currently rejects passing, returning, aliasing, or indexing a whole record containing optional fields except when passing it directly to an explicit `js` call. This prevents raw optional values from escaping into FunScript but makes ordinary props forwarding inconvenient. Named and nested optional record types are not yet supported.
 
-React's `createElement` type inference also treats the existing optional-props ranking components as accepting no named props. This needs a behavior-preserving component signature during the native FunScript migration.
+The app type check still reports 13 errors on the ranking route components' optional TypeScript props, the top-liked loader's omitted injectable totals reader and fixtures, and its optional loader argument. Do not suppress these errors or add companion `.d.ts` files. Further work needs to preserve ordinary JavaScript values when props are forwarded and distinguish missing, `undefined`, and `null` where the API requires it.
 
-## Open: function expressions inside boolean expressions
-
-A callback fallback written as `props.onOrderChange or ((nextOrder: RankingOrder) => Unit)` emitted a JavaScript expression with an unparenthesized arrow after `||`, which Vite rejected. A separate multiline function binding works. The compiler should either emit the necessary parentheses and valid return expression or report a useful error instead of generating invalid TypeScript.
+The previously reported invalid arrow-function fallback now emits parentheses and passes a regression test.
 
 ## Open: escape-hatch checking
 

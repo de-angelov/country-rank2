@@ -24,7 +24,7 @@ export getDisplayedRankNumber = (props: RankNumberInput) =>
     | true => props.total - props.index
     | false => props.index + 1
 
-export RankedCountriesList = (props: RankedCountriesListProps) =>
+export RankedCountriesList = (props: SchemaInput<RankedCountriesListProps>) =>
   rankToneClass = match props.rankTone
     | "dislike" => "bg-vote-dislike"
     | _ => "bg-vote-like"

@@ -37,7 +37,7 @@ export loadTopDislikedRouteData = (options: Object) =>
   }
   => Effect.runPromise(routeData)
 
-export loader = (args: Object) =>
+export loader = (args: Object = {}) =>
   request = Reflect.get(args or {}, "request")
   url = String(Reflect.get(request or {}, "url") or "")
   => match url.includes("order=lowest-first")
