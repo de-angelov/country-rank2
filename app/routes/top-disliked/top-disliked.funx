@@ -16,7 +16,7 @@ ts {
     initialOrder?: RankingOrder;
   }
 
-  export function TopDisliked(props?: TopDislikedProps) {
+  export function TopDisliked(props: TopDislikedProps) {
     const loaderData = (() => {
       try {
         return useLoaderData() as { countries?: Country[] } | Country[] | undefined;

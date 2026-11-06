@@ -214,6 +214,11 @@ describe("top-liked server loader and Effect workflow", () => {
 });
 
 describe("TopLiked component rendering", () => {
+  it("renders when React supplies an empty props object", () => {
+    const html = renderToString(React.createElement(MemoryRouter, null, React.createElement(TopLiked, {})));
+    expect(html).toContain("No countries available.");
+  });
+
   it("renders page wrapped in AppShell with header and RankingOrderControls", () => {
     const html = renderToString(
       React.createElement(

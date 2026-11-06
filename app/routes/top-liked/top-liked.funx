@@ -16,7 +16,7 @@ ts {
     initialOrder?: RankingOrder;
   }
 
-  export function TopLiked(props?: TopLikedProps) {
+  export function TopLiked(props: TopLikedProps) {
     const loaderData = (() => {
       try {
         return useLoaderData() as { countries?: Country[] } | Country[] | undefined;

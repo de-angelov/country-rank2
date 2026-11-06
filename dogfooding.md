@@ -1,6 +1,6 @@
 # FunScript dogfooding
 
-Observed against the bundled FunScript build from commit `5bafeaf`.
+Observed against the bundled FunScript build from commit `5d6231a`.
 
 ## Working: Vite and React Router routes
 
@@ -14,7 +14,7 @@ Optional parameters now become real Effect `Option` values inside FunScript, and
 
 Inline record parameters now support optional callback props and produce real Effect `Option` values inside FunScript. The ranking controls use this syntax. For safety, the compiler currently rejects passing, returning, aliasing, or indexing a whole record containing optional fields except when passing it directly to an explicit `js` call. This prevents raw optional values from escaping into FunScript but makes ordinary props forwarding inconvenient. Named and nested optional record types are not yet supported.
 
-The app type check still reports 13 errors on the ranking route components' optional TypeScript props, the top-liked loader's omitted injectable totals reader and fixtures, and its optional loader argument. Do not suppress these errors or add companion `.d.ts` files. Further work needs to preserve ordinary JavaScript values when props are forwarded and distinguish missing, `undefined`, and `null` where the API requires it.
+The app type check now passes. The ranking components declare a required props object whose individual fields are optional, allowing React's component overloads to infer the props correctly. The top-liked loader declares its optional injected dependencies and accepts omitted loader arguments. Its optional inputs must currently be unpacked and reconstructed when forwarded; named optional record types and general props forwarding remain open language gaps. Further work also needs to distinguish missing, `undefined`, and `null` where the API requires it.
 
 The previously reported invalid arrow-function fallback now emits parentheses and passes a regression test.
 
