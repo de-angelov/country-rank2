@@ -35,8 +35,7 @@ export wrapTopLikedCountries = (countries: Array<Country>) =>
   => result
 
 export loadTopLikedRouteData = (options: { order?: Unknown, readTotals?: () => Effect<VoteTotalsByCountry, RedisVoteStorageError>, fixtures?: Array<Country>, logger?: { error: (context: { cause: Unknown }, message: String) => Void } }) =>
-  forwarded = { order: Option.getOrUndefined(options.order), readTotals: Option.getOrUndefined(options.readTotals), fixtures: Option.getOrUndefined(options.fixtures), logger: Option.getOrUndefined(options.logger) }
-  mapped = Effect.map(readTopLikedCountries(forwarded), wrapTopLikedCountries)
+  mapped = Effect.map(readTopLikedCountries(options), wrapTopLikedCountries)
   => Effect.runPromise(mapped)
 
 export loader = (args: Object = {}) =>

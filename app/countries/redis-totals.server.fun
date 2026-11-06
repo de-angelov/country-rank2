@@ -40,18 +40,13 @@ export mergeCountriesWithVoteTotals = (countries: Array<Country>, totalsByCountr
     voteTotals = Option.fromNullishOr(totalsByCountry.get(country.code))
     totals = match voteTotals
       | Some(value) => value
-      | None =>
-        empty = { countryCode: country.code, likes: 0, dislikes: 0 }
-        => empty
+      | None => { countryCode: country.code, likes: 0, dislikes: 0 }
     updated = { ...country, likes: totals.likes, dislikes: totals.dislikes }
     => updated
   )
 
 export createFallbackCountries = (countries: Array<Country>): Array<Country> =>
-  => countries.map((country) =>
-    updated = { ...country, likes: 0, dislikes: 0 }
-    => updated
-  )
+  => countries.map((country) => { ...country, likes: 0, dislikes: 0 })
 
 export readCountriesWithVoteTotals = (options: Unknown) =>
   effect {

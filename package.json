@@ -7,7 +7,7 @@
     "dev": "react-router dev",
     "start": "react-router-serve ./build/server/index.js",
     "test": "vitest run",
-    "typecheck": "react-router typegen && tsc",
+    "typecheck": "react-router typegen && funscript tsc",
     "lint": "eslint . --max-warnings=0",
     "check:idiomatic": "bash scripts/check-idiomatic-funscript.sh"
   },
