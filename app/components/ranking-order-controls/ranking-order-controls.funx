@@ -9,7 +9,13 @@ export getRankingOrderLabel = (order: RankingOrder) =>
     | HighestFirst => "Highest First"
     | LowestFirst => "Lowest First"
 
-export RankingOrderControls = (props: { order?: RankingOrder, currentOrder?: RankingOrder, onOrderChange?: (order: RankingOrder) => Void }) =>
+export schema RankingOrderControlsProps = {
+  order?: RankingOrder
+  currentOrder?: RankingOrder
+  onOrderChange?: (order: RankingOrder) => Void
+}
+
+export RankingOrderControls = (props: RankingOrderControlsProps) =>
   active = Option.getOrElse(props.order, () => Option.getOrElse(props.currentOrder, () => HighestFirst))
   isHighest = match active
     | HighestFirst => true
