@@ -1,11 +1,11 @@
-import { Effect, Result } from "effect"
+import { Effect, Option, Result } from "effect"
 import { countryFixtures } from "./fixtures.js"
 import { logger } from "../lib/logger.server.js"
 import { readAllCountryVoteTotals } from "../votes/storage.server.js"
+import { Country } from "./country.js"
+import type { VoteTotalsByCountry, RedisVoteStorageError } from "../votes/storage.server.js"
 
 ts {
-  import type { Country } from "./country.js";
-  import type { VoteTotalsByCountry, RedisVoteStorageError } from "../votes/storage.server.js";
   import type { ApplicationLogger } from "../lib/logger.server.js";
 
   export type CountryVoteTotalsOptions = Readonly<{
@@ -23,28 +23,6 @@ ts {
     };
   };
 
-  export const mergeCountriesWithVoteTotals = (
-    countries: ReadonlyArray<Country>,
-    totalsByCountry: VoteTotalsByCountry
-  ): Array<Country> =>
-    countries.map((country) => {
-      const voteTotals = totalsByCountry.get(country.code);
-      return {
-        ...country,
-        likes: voteTotals ? voteTotals.likes : 0,
-        dislikes: voteTotals ? voteTotals.dislikes : 0,
-      };
-    });
-
-  export const createFallbackCountries = (
-    countries: ReadonlyArray<Country>
-  ): Array<Country> =>
-    countries.map((country) => ({
-      ...country,
-      likes: 0,
-      dislikes: 0,
-    }));
-
   export const logRedisTotalsError = (
     error: unknown,
     customLogger?: Pick<ApplicationLogger, "error">
@@ -56,6 +34,24 @@ ts {
     );
   };
 }
+
+export mergeCountriesWithVoteTotals = (countries: Array<Country>, totalsByCountry: VoteTotalsByCountry): Array<Country> =>
+  => countries.map((country) =>
+    voteTotals = Option.fromNullishOr(totalsByCountry.get(country.code))
+    totals = match voteTotals
+      | Some(value) => value
+      | None =>
+        empty = { countryCode: country.code, likes: 0, dislikes: 0 }
+        => empty
+    updated = { ...country, likes: totals.likes, dislikes: totals.dislikes }
+    => updated
+  )
+
+export createFallbackCountries = (countries: Array<Country>): Array<Country> =>
+  => countries.map((country) =>
+    updated = { ...country, likes: 0, dislikes: 0 }
+    => updated
+  )
 
 export readCountriesWithVoteTotals = (options: Unknown) =>
   effect {

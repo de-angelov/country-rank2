@@ -24,4 +24,14 @@ The project-level `npm run check:idiomatic` reports locations for non-ambient `t
 
 ## Remaining migration
 
-Larger TypeScript escape blocks remain in the ranking route components, home helpers, votes, Redis, totals, and logger modules, along with TypeScript UI, configuration, framework adapter, and test files. These need behavior-preserving conversions. TypeScript diagnostics from the generated type view may refer to cache paths rather than original FunScript locations.
+The home server's Promise adapter, country vote-total mapping, fallback mapping, and vote storage key are now native FunScript. The remaining TypeScript is concentrated around these examples:
+
+- `app/components/ui/{button,card,progress}.tsx` use React's native component prop types, JSX prop spreading and rest fields, and library-defined variant types. FunScript's current restrictions on whole optional records and rest parameters make preserving those wrappers' general-purpose APIs awkward.
+- `app/lib/utils.ts` exposes a variadic `cn(...inputs)` API. FunScript does not yet support rest parameters.
+- `app/routes/home/home.funx` still uses TypeScript for router-hook fallbacks and `new URLSearchParams(prev)`. JavaScript constructors requiring `new` currently need an interop wrapper.
+- `app/routes/top-liked/top-liked.funx` and `app/routes/top-disliked/top-disliked.funx` still contain the interactive route components. They combine React hooks, optional props, and React Router values; converting them must preserve the existing behavior and inferred React types.
+- `app/countries/redis-totals.server.fun`, `app/lib/redis.server.fun`, `app/votes/storage.server.fun`, and `app/lib/logger.server.fun` retain TypeScript for optional dependency-injection objects, imported library types, and APIs that rely on JavaScript construction or mutable state. `app/routes/votes.server.fun` still contains request parsing and validation over untrusted JavaScript values.
+- An inline object returned directly from a callback or match arm, such as `(country) => { ...country, likes: 0 }`, produced invalid TypeScript in this build. The migrated country mappings use a named binding and an explicit return instead.
+- `app/root.tsx` and `app/routes.ts` are React Router entry/configuration files; tests and build configuration also contain TypeScript. They need separate framework/tooling assessment before removal.
+
+The `npm run check:idiomatic` check still reports the nine remaining non-ambient TypeScript blocks. TypeScript diagnostics from the generated type view may refer to cache paths rather than original FunScript locations.

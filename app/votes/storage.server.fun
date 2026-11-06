@@ -58,9 +58,6 @@ ts {
       `${redisUrlEnvVar} must be set to read or write vote totals.`
     );
 
-  export const voteTotalsKey = (voteKind: VoteKind) =>
-    `country:votes:${voteKind === "like" ? "likes" : "dislikes"}`;
-
   export const createRedisVoteStorage = (
     options: RedisVoteStorageOptions = {}
   ) => {
@@ -192,3 +189,8 @@ ts {
     incrementCountryVoteTotal,
   } = defaultVoteStorage;
 }
+
+export voteTotalsKey = (voteKind: VoteKind) =>
+  match voteKind
+    | "like" => "country:votes:likes"
+    | _ => "country:votes:dislikes"

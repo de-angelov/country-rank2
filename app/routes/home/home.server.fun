@@ -1,4 +1,5 @@
 import { Country } from "../../countries/index.js"
+import { Effect } from "effect"
 import type { CountryVoteTotalsOptions } from "../../countries/index.js"
 import { readCountriesWithVoteTotals } from "../../countries/redis-totals.server.js"
 
@@ -8,15 +9,16 @@ export schema HomeLoaderResult = {
 export schema HomeLoaderOptions = CountryVoteTotalsOptions
 export schema HomeRouteData = HomeLoaderResult
 
-export readHomeCountries = (options: Unknown) => readCountriesWithVoteTotals(options)
+export readHomeCountries = (options: Unknown = {}) => readCountriesWithVoteTotals(options)
 
 export getHomeCountries = readHomeCountries
 export loadHomeCountries = readHomeCountries
 
-export loadHomeRouteData = (options: Unknown) =>
-  effect {
+export loadHomeRouteData = (options: Unknown = {}) =>
+  result = effect {
     countries <- readHomeCountries(options)
     => { countries: countries }
   }
+  => Effect.runPromise(result)
 
-export loader = (_args: Unknown) => loadHomeRouteData({})
+export loader = (_args: Unknown = {}) => loadHomeRouteData()
