@@ -52,6 +52,11 @@ describe("vote action route", () => {
       }
     });
 
+    it("accepts domain vote tags without accepting unrelated object tags", () => {
+      expect(validateVoteRequest({ code: "JP", kind: { _tag: "Like" } }).ok).toBe(true);
+      expect(validateVoteRequest({ code: "JP", kind: { _tag: "like" } }).ok).toBe(false);
+    });
+
     it("returns typed validation errors for unsupported country code and invalid vote type", () => {
       const result = validateVoteRequest({
         countryCode: "XX",
@@ -243,6 +248,36 @@ describe("vote action route", () => {
           envVar: "REDIS_URL",
         },
       });
+    });
+
+    it("returns validation errors for malformed JSON", async () => {
+      const response = await handleVoteRequest(new Request("https://example.test/votes", {
+        method: "POST", headers: { "content-type": "application/json" }, body: "{",
+      }));
+      expect(response.status).toBe(400);
+      expect(voteStorage.incrementCountryVoteTotal).not.toHaveBeenCalled();
+    });
+
+    it("returns 500 when storage throws an unexpected error", async () => {
+      vi.mocked(voteStorage.incrementCountryVoteTotal).mockImplementation(() => { throw new Error("unexpected"); });
+      const response = await handleVoteRequest(new Request("https://example.test/votes", {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ countryCode: "JP", voteType: "like" }),
+      }));
+      expect(response.status).toBe(500);
+      expect(await readJson(response)).toMatchObject({ ok: false, error: { code: "redis_command_failed" } });
+    });
+
+    it("supports a Promise-returning storage adapter", async () => {
+      vi.mocked(voteStorage.incrementCountryVoteTotal).mockReturnValue(
+        Promise.resolve({ countryCode: "JP", likes: 2, dislikes: 1 }) as unknown as ReturnType<typeof voteStorage.incrementCountryVoteTotal>,
+      );
+      const response = await handleVoteRequest(new Request("https://example.test/votes", {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ countryCode: "JP", voteType: "like" }),
+      }));
+      expect(response.status).toBe(200);
+      expect(await readJson(response)).toMatchObject({ data: { totals: { likes: 2, dislikes: 1 } } });
     });
   });
 });

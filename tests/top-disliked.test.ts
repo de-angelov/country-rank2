@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { MemoryRouter } from "react-router";
+import { MemoryRouter, RouterProvider, createMemoryRouter } from "react-router";
 import { Effect } from "effect";
 
 import type { Country } from "../app/countries/country.js";
@@ -198,6 +198,33 @@ describe("top-disliked server loader and Effect workflow", () => {
 });
 
 describe("TopDisliked component rendering", () => {
+  it("uses router loader data and the order query parameter", () => {
+    const router = createMemoryRouter(
+      [{ id: "disliked", path: "/", Component: TopDisliked }],
+      {
+        initialEntries: ["/?order=lowest-first"],
+        hydrationData: { loaderData: { disliked: { countries: mockCountries } } },
+      },
+    );
+    const html = renderToString(React.createElement(RouterProvider, { router }));
+    expect(html).toContain("Iceland");
+    expect(html.indexOf("Iceland")).toBeLessThan(html.indexOf("Japan"));
+    expect(html).toContain('aria-label="Top Disliked Countries"');
+  });
+
+  it("accepts array loader data and gives the initial order prop precedence", () => {
+    const router = createMemoryRouter(
+      [{ id: "disliked", path: "/", element: React.createElement(TopDisliked, { initialOrder: HighestFirst }) }],
+      {
+        initialEntries: ["/?order=lowest-first"],
+        hydrationData: { loaderData: { disliked: mockCountries } },
+      },
+    );
+    const html = renderToString(React.createElement(RouterProvider, { router }));
+    expect(html.indexOf("Japan")).toBeGreaterThan(-1);
+    expect(html.indexOf("Japan")).toBeLessThan(html.indexOf("Iceland"));
+  });
+
   it("renders when React supplies an empty props object", () => {
     const html = renderToString(React.createElement(MemoryRouter, null, React.createElement(TopDisliked, {})));
     expect(html).toContain("No countries available.");

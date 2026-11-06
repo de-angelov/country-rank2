@@ -1,10 +1,17 @@
-import { Effect } from "effect"
+import { Effect, Option } from "effect"
 import { createDefaultRedisClient, createRedisClientProvider, getRedisConfig, redisUrlEnvVar } from "../lib/redis.server.js"
+
+export getRedisVoteStorageConfig = (env?: ts { NodeJS.ProcessEnv }) =>
+  => getRedisConfig(Option.getOrUndefined(env), "REDIS_URL must be set to read or write vote totals.")
+
+validateCountryCode = (countryCode: String) =>
+  normalized = countryCode.trim().toUpperCase()
+  => match RegExp("^[A-Z][A-Z]$").test(normalized)
+    | true => Effect.succeed(normalized)
+    | false => Effect.fail(Object.freeze({ code: "invalid_country_code", message: "Country code must be a two-letter ISO country code.", countryCode: countryCode }))
 
 ts {
   import type { RedisClientFactory, RedisConfig } from "../lib/redis.server.js";
-
-  const countryCodePattern = /^[A-Z]{2}$/;
 
   export type VoteKind = "like" | "dislike";
 
@@ -52,12 +59,6 @@ ts {
   export const createDefaultRedisVoteClient: RedisVoteClientFactory = (config) =>
     createDefaultRedisClient(config) as RedisVoteClient;
 
-  export const getRedisVoteStorageConfig = (env?: NodeJS.ProcessEnv) =>
-    getRedisConfig(
-      env,
-      `${redisUrlEnvVar} must be set to read or write vote totals.`
-    );
-
   export const createRedisVoteStorage = (
     options: RedisVoteStorageOptions = {}
   ) => {
@@ -69,32 +70,8 @@ ts {
       connectionFailureMessage: "Failed to connect to Redis vote storage.",
     });
 
-    const validateCountryCode = (
-      countryCode: string
-    ): Effect.Effect<string, RedisVoteStorageError> => {
-      const normalized = countryCode.trim().toUpperCase();
-      if (!countryCodePattern.test(normalized)) {
-        return Effect.fail({
-          code: "invalid_country_code",
-          message: "Country code must be a two-letter ISO country code.",
-          countryCode,
-        });
-      }
-      return Effect.succeed(normalized);
-    };
-
-    const runRedis = <A,>(
-      tryFn: () => Promise<A>,
-      message: string
-    ): Effect.Effect<A, RedisVoteStorageError> =>
-      Effect.tryPromise({
-        try: tryFn,
-        catch: (cause): RedisVoteStorageError => ({
-          code: "redis_command_failed",
-          message,
-          cause,
-        }),
-      });
+    const runRedis = <A,>(tryFn: () => Promise<A>, message: string): Effect.Effect<A, RedisVoteStorageError> =>
+      Effect.tryPromise({ try: tryFn, catch: (cause): RedisVoteStorageError => ({ code: "redis_command_failed", message, cause }) });
 
     const readCountryVoteTotals = (
       countryCode: string

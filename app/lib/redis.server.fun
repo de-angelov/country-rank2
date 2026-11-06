@@ -39,12 +39,6 @@ ts {
     connectionFailureMessage: string;
   }>;
 
-  export const resolveRedisUrl = (env?: NodeJS.ProcessEnv): string | null => {
-    const rawEnv = env ?? (typeof process !== "undefined" ? process.env : undefined);
-    const url = rawEnv?.[redisUrlEnvVar]?.trim();
-    return url && url.length > 0 ? url : null;
-  };
-
   export class ClientCache<Client extends RedisConnectableClient> {
     private clientPromise: Promise<Client> | undefined;
     constructor(private options: RedisClientProviderOptions<Client>) {}
@@ -83,21 +77,21 @@ ts {
     }
   }
 
-  export const getRedisConfig = (
-    env?: NodeJS.ProcessEnv,
-    message: string = `${redisUrlEnvVar} must be set to connect to Redis.`
-  ): Effect.Effect<RedisConfig, RedisConfigurationError> => {
-    const url = resolveRedisUrl(env);
-    if (!url) {
-      return Effect.fail({
-        code: "missing_redis_config",
-        message,
-        envVar: redisUrlEnvVar,
-      });
-    }
-    return Effect.succeed({ url });
-  };
+
 }
+
+export resolveRedisUrl = (env?: ts { NodeJS.ProcessEnv }) =>
+  variables = Option.getOrElse(env, () => process.env)
+  url = Option.map(Option.fromNullishOr(variables[redisUrlEnvVar]), (value) => value.trim())
+  nonEmpty = Option.filter(url, (value) => value.length #! 0)
+  => Option.getOrNull(nonEmpty)
+
+export getRedisConfig = (env?: ts { NodeJS.ProcessEnv }, message?: String) =>
+  url = Option.fromNullishOr(resolveRedisUrl(Option.getOrUndefined(env)))
+  failureMessage = Option.getOrElse(message, () => "REDIS_URL must be set to connect to Redis.")
+  => match url
+    | Some(value) => Effect.succeed({ url: value })
+    | None => Effect.fail(Object.freeze({ code: "missing_redis_config", message: failureMessage, envVar: redisUrlEnvVar }))
 
 export createDefaultRedisClient = (config: ts { RedisConfig }): ts { RedisConnectableClient } =>
   => createClient({ url: config.url })

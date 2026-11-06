@@ -1,6 +1,9 @@
 import { loader as serverLoader } from "./home.server.js"
+import { Effect, Option, Schema, Function } from "effect"
 import { useState, useMemo, useEffect } from "react"
-import { useLoaderData, useSearchParams } from "react-router"
+import type { ChangeEvent } from "react"
+import { Country } from "../../countries/country.js"
+import { useLoaderData, useSearchParams, createSearchParams } from "react-router"
 import { AppShell } from "../../components/app-shell/app-shell.js"
 import { RankedCountriesList } from "../../components/ranked-countries-list/ranked-countries-list.js"
 export loader = serverLoader
@@ -22,64 +25,33 @@ export filterCountriesByName = (countries: Array<Country>, searchQuery: String):
     | true => countries.slice()
     | false => countries.filter((country) => country.name.toLocaleLowerCase().includes(query))
 
-ts {
-  import type { Country } from "../../countries/country.js";
-  import type { ChangeEvent } from "react";
+readLoaderCountries = (payload: Unknown) =>
+  direct = Schema.decodeUnknownOption(Schema.Array(Country))(payload)
+  wrapped = Schema.decodeUnknownOption(Schema.Struct({ countries: Schema.optional(Schema.Array(Country)) }))(payload)
+  => Option.getOrElse(direct, () => match wrapped
+    | Some(result) => Option.getOrElse(Option.fromNullishOr(result.countries), () => [])
+    | None => []
+  )
 
-  export type HomeProps = {
-    countries?: readonly Country[];
-    initialSearch?: string;
-  };
+updateSearchQuery = (prev: URLSearchParams, query: String) =>
+  next = createSearchParams(prev)
+  match query.length #= 0
+    | true => next.delete("q")
+    | false => next.set("q", query)
+  => next
 
-  const safeGetLoaderCountries = (): readonly Country[] => {
-    try {
-      const data = useLoaderData() as { countries?: Country[] } | Country[] | undefined;
-      if (!data) return [];
-      if (Array.isArray(data)) return data;
-      return data.countries ?? [];
-    } catch {
-      return [];
-    }
-  };
-
-  const safeGetSearchParams = () => {
-    try {
-      return useSearchParams();
-    } catch {
-      return [new URLSearchParams(), () => {}] as const;
-    }
-  };
-
-  const updateSearchQuery = (prev: URLSearchParams, query: string) => {
-    const next = new URLSearchParams(prev);
-    if (query) {
-      next.set("q", query);
-    } else {
-      next.delete("q");
-    }
-    return next;
-  };
-
-  const syncInitialSearch = (
-    initialSearch: string | undefined,
-    setSearch: (s: string) => void,
-    setDebounced: (s: string) => void
-  ) => {
-    if (initialSearch !== undefined) {
-      setSearch(initialSearch);
-      setDebounced(initialSearch);
-    }
-  };
-}
-
-export Home = (props: HomeProps) =>
-  rawCountries = safeGetLoaderCountries()
-  searchParamsTuple = safeGetSearchParams()
-  searchParams = searchParamsTuple[0]
-  setSearchParams = searchParamsTuple[1]
-
-  queryFromParams = searchParams.get("q") or ""
-  initialQuery = props.initialSearch or queryFromParams
+export Home = (props: { countries?: Array<Country>, initialSearch?: String }) =>
+  loaderData = Effect.runSync(Effect.option(Effect.try(() => useLoaderData())))
+  rawCountries = match loaderData
+    | Some(payload) => readLoaderCountries(payload)
+    | None => []
+  searchParamsTuple = Effect.runSync(Effect.option(Effect.try(() => useSearchParams())))
+  setSearchParams = Option.getOrUndefined(Option.map(searchParamsTuple, (params) => params[1]))
+  queryFromParams = match searchParamsTuple
+    | Some(params) => Option.getOrElse(Option.fromNullishOr(params[0].get("q")), () => "")
+    | None => ""
+  initialSearch = Option.getOrUndefined(props.initialSearch)
+  initialQuery = Option.getOrElse(props.initialSearch, () => queryFromParams)
 
   searchInputState = useState(initialQuery)
   searchInput = searchInputState[0]
@@ -89,17 +61,24 @@ export Home = (props: HomeProps) =>
   debouncedQuery = debouncedState[0]
   setDebouncedQuery = debouncedState[1]
 
-  countries = props.countries or rawCountries
+  countries = Option.getOrElse(props.countries, () => rawCountries)
   sortedCountries = useMemo(() => sortCountriesByDisplayName(countries), [countries])
   displayedCountries = useMemo(() => filterCountriesByName(sortedCountries, debouncedQuery), [sortedCountries, debouncedQuery])
 
-  useEffect(() => syncInitialSearch(props.initialSearch, setSearchInput, setDebouncedQuery), [props.initialSearch])
+  useEffect(() => match Option.fromNullishOr(initialSearch)
+    | Some(value) =>
+      setSearchInput(value)
+      => setDebouncedQuery(value)
+    | None => Function.constVoid()
+  , [initialSearch])
 
   useEffect(() =>
     timer = setTimeout(() =>
       setDebouncedQuery(searchInput)
       trimmed = searchInput.trim()
-      => setSearchParams((prev: URLSearchParams) => updateSearchQuery(prev, trimmed), { replace: true })
+      => match Option.fromNullishOr(setSearchParams)
+        | Some(update) => update((prev: URLSearchParams) => updateSearchQuery(prev, trimmed), { replace: true })
+        | None => Function.constVoid()
     , SEARCH_DEBOUNCE_MS)
     => () => clearTimeout(timer)
   , [searchInput, setSearchParams])
