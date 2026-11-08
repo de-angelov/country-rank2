@@ -1,120 +1,78 @@
+import { Effect, Option, Schema } from "effect"
+import { useState, useMemo } from "react"
+import { useLoaderData, useSearchParams, createSearchParams } from "react-router"
 import { loader as serverLoader } from "./top-liked.server.js"
-export loader = serverLoader
+import { Country } from "../../countries/country.js"
 import { AppShell } from "../../components/app-shell/app-shell.js"
 import { RankingOrderControls, HighestFirst, LowestFirst } from "../../components/ranking-order-controls/ranking-order-controls.js"
+import type { RankingOrder } from "../../components/ranking-order-controls/ranking-order-controls.js"
 import { RankedCountriesList } from "../../components/ranked-countries-list/ranked-countries-list.js"
+import { sortCountriesByLikes, isLowestFirst } from "./ranking.js"
 
-ts {
-  import * as React from "react";
-  import { useLoaderData, useSearchParams } from "react-router";
-  import type { Country } from "../../countries/country.js";
-  import type { RankingOrder } from "../../components/ranking-order-controls/ranking-order-controls.js";
-  import { sortCountriesByLikes, isLowestFirst } from "./ranking.js";
+export loader = serverLoader
 
-  export interface TopLikedProps {
-    countries?: readonly Country[];
-    initialOrder?: RankingOrder;
-  }
+readLoaderCountries = (payload: Unknown) =>
+  direct = Schema.decodeUnknownOption(Schema.Array(Country))(payload)
+  wrapped = Schema.decodeUnknownOption(Schema.Struct({ countries: Schema.optional(Schema.Array(Country)) }))(payload)
+  => Option.getOrElse(direct, () => match wrapped
+    | Some(result) => Option.getOrElse(Option.fromNullishOr(result.countries), () => [])
+    | None => []
+  )
 
-  export function TopLiked(props: TopLikedProps) {
-    const loaderData = (() => {
-      try {
-        return useLoaderData() as { countries?: Country[] } | Country[] | undefined;
-      } catch {
-        return undefined;
-      }
-    })();
-
-    const searchParams = (() => {
-      try {
-        const [params] = useSearchParams();
-        return params;
-      } catch {
-        return undefined;
-      }
-    })();
-
-    const [, setSearchParams] = (() => {
-      try {
-        return useSearchParams();
-      } catch {
-        return [undefined, undefined];
-      }
-    })();
-
-    const [order, setOrder] = React.useState<RankingOrder>(() => {
-      if (props?.initialOrder) return props.initialOrder;
-      if (searchParams && searchParams.get("order") === "lowest-first") {
-        return LowestFirst;
-      }
-      return HighestFirst;
-    });
-
-    const countries =
-      props?.countries ??
-      (Array.isArray(loaderData) ? loaderData : loaderData?.countries) ??
-      [];
-
-    const lowest = isLowestFirst(order);
-
-    const displayedCountries = React.useMemo(() => {
-      return sortCountriesByLikes(countries, order);
-    }, [countries, order]);
-
-    const handleOrderChange = (nextOrder: RankingOrder) => {
-      setOrder(nextOrder);
-      if (typeof setSearchParams === "function") {
-        const isLowest = isLowestFirst(nextOrder);
-        setSearchParams(
-          (prev) => {
-            const next = new URLSearchParams(prev);
-            if (isLowest) {
-              next.set("order", "lowest-first");
-            } else {
-              next.delete("order");
-            }
-            return next;
-          },
-          { replace: true }
-        );
-      }
-    };
-
-    return (
-      <AppShell>
-        <div className="space-y-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b-2 border-black pb-4">
-            <div>
-              <h1 className="text-3xl font-black tracking-tight sm:text-4xl">
-                Top Liked Countries
-              </h1>
-              <p className="mt-1 text-sm font-medium text-neutral-700">
-                Community favorites ranked by total likes
-              </p>
-            </div>
-            <RankingOrderControls
-              order={order}
-              currentOrder={order}
-              onOrderChange={handleOrderChange}
-            />
-          </div>
-
-          {displayedCountries.length === 0 ? (
-            <p className="py-12 text-center text-sm font-semibold text-neutral-600">
-              No countries available.
-            </p>
-          ) : (
-            <RankedCountriesList
-              ariaLabel="Top Liked Countries"
-              countries={displayedCountries}
-              rankNumberOrder={lowest ? "lowest-first" : "highest-first"}
-              rankTone="like"
-            />
-          )}
+export TopLiked = (props: { countries?: Array<Country>, initialOrder?: RankingOrder }) =>
+  loaderData = Effect.runSync(Effect.option(Effect.try(() => useLoaderData())))
+  searchParams = Effect.runSync(Effect.option(Effect.try(() => useSearchParams())))
+  initialOrder = Option.getOrElse(props.initialOrder, () => match searchParams
+    | Some(params) => match params[0].get("order") #= "lowest-first"
+      | true => LowestFirst
+      | false => HighestFirst
+    | None => HighestFirst
+  )
+  orderState = useState(initialOrder)
+  order = orderState[0]
+  setOrder = orderState[1]
+  countries = Option.getOrElse(props.countries, () => match loaderData
+    | Some(payload) => readLoaderCountries(payload)
+    | None => []
+  )
+  lowest = isLowestFirst(order)
+  displayedCountries = useMemo(() => sortCountriesByLikes(countries, order), [countries, order])
+  handleOrderChange = (nextOrder: RankingOrder) =>
+    setOrder(nextOrder)
+    match searchParams
+      | Some(params) =>
+        setSearchParams = params[1]
+        setSearchParams((prev: URLSearchParams) =>
+          next = createSearchParams(prev)
+          match isLowestFirst(nextOrder)
+            | true => next.set("order", "lowest-first")
+            | false => next.delete("order")
+          => next
+        , { replace: true })
+      | None => false
+    => nextOrder
+  rankNumberOrder = match lowest
+    | true => "lowest-first"
+    | false => "highest-first"
+  content = match displayedCountries.length #= 0
+    | true => <p className="py-12 text-center text-sm font-semibold text-neutral-600">No countries available.</p>
+    | false => <RankedCountriesList
+        ariaLabel="Top Liked Countries"
+        countries={displayedCountries}
+        rankNumberOrder={rankNumberOrder}
+        rankTone="like"
+      />
+  => <AppShell>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b-2 border-black pb-4">
+        <div>
+          <h1 className="text-3xl font-black tracking-tight sm:text-4xl">Top Liked Countries</h1>
+          <p className="mt-1 text-sm font-medium text-neutral-700">Community favorites ranked by total likes</p>
         </div>
-      </AppShell>
-    );
-  }
+        <RankingOrderControls order={order} currentOrder={order} onOrderChange={handleOrderChange} />
+      </div>
+      {content}
+    </div>
+  </AppShell>
 
-  export default TopLiked;
-}
+export default TopLiked
