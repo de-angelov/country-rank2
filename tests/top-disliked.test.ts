@@ -18,7 +18,7 @@ import {
   loadTopDislikedRouteData,
   loader,
 } from "../app/routes/top-disliked/top-disliked.server.fun";
-import { TopDisliked } from "../app/routes/top-disliked/top-disliked.funx";
+import TopDislikedDefault, { TopDisliked } from "../app/routes/top-disliked/top-disliked.funx";
 
 const mockCountries: readonly Country[] = [
   {
@@ -198,6 +198,19 @@ describe("top-disliked server loader and Effect workflow", () => {
 });
 
 describe("TopDisliked component rendering", () => {
+  it("exports TopDisliked as both a named export and a default export component", () => {
+    expect(typeof TopDisliked).toBe("function");
+    expect(typeof TopDislikedDefault).toBe("function");
+    const router = createMemoryRouter(
+      [{ id: "disliked", path: "/", Component: TopDislikedDefault }],
+      {
+        initialEntries: ["/"],
+        hydrationData: { loaderData: { disliked: { countries: [] } } },
+      },
+    );
+    const html = renderToString(React.createElement(RouterProvider, { router }));
+    expect(html).toContain("No countries available.");
+  });
   it("uses router loader data and the order query parameter", () => {
     const router = createMemoryRouter(
       [{ id: "disliked", path: "/", Component: TopDisliked }],
