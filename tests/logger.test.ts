@@ -59,6 +59,10 @@ describe("logger.server", () => {
     });
 
     it("redacts sensitive fields in logged payloads", () => {
+      expect(sensitiveLogRedactionPaths).toContain("authorization");
+      expect(sensitiveLogRedactionPaths).toContain("cookie");
+      expect(sensitiveLogRedactionPaths).toContain("STRIPE_SECRET_KEY");
+
       const chunks: string[] = [];
       const stream = {
         write: (chunk: string) => {
