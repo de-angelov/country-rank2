@@ -210,6 +210,20 @@ describe("top-liked server loader and Effect workflow", () => {
 
     const emptyArgsData = await loader();
     expect(Array.isArray(emptyArgsData.countries)).toBe(true);
+
+    const optionCountries = mockCountries.map((country) => ({ ...country, likes: country.code === "JP" ? 9 : 1 }));
+    const optionData = await loader(undefined, {
+      fixtures: optionCountries,
+      readTotals: () => Effect.succeed(new Map([["JP", { countryCode: "JP", likes: 9, dislikes: 0 }]])),
+      order: "lowest-first",
+    });
+    expect(optionData.countries.find((country) => country.code === "JP")?.likes).toBe(9);
+
+    const exactValueRequest = new Request("https://countryrank.example.com/top-liked?order=almost-lowest-first");
+    const exactValueData = await loader({ request: exactValueRequest });
+    expect(exactValueData.countries.map((country) => country.code)).toEqual(
+      highestData.countries.map((country) => country.code)
+    );
   });
 });
 

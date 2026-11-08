@@ -17,7 +17,7 @@ export sortCountriesByLikesDescending = sharedSortCountriesByLikesDescending
 export sortCountriesByLikesAscending = sharedSortCountriesByLikesAscending
 export sortCountriesByLikes = sharedSortCountriesByLikes
 
-export resolveTopLikedOptions = (rawOptions: TopLikedLoaderOptions): TopLikedLoaderOptions => rawOptions
+export resolveTopLikedOptions = (rawOptions: TopLikedLoaderOptions): TopLikedLoaderOptions => rawOptions or {}
 
 export readTopLikedCountries = countryReader.readTopLikedCountries
 
@@ -32,7 +32,7 @@ export loadTopLikedRouteData = (options: { order?: Unknown, readTotals?: () => E
   mapped = Effect.map(countryReader.readTopLikedCountries(options), wrapTopLikedCountries)
   => Effect.runPromise(mapped)
 
-export loader = (args: Object = {}) =>
+export loader = (args: Unknown = {}, options: Unknown = {}) =>
   request = Reflect.get(args or {}, "request")
   url = String(Reflect.get(request or {}, "url") or "http://localhost")
   query = url.split("?")[1] or ""
@@ -42,5 +42,6 @@ export loader = (args: Object = {}) =>
   order = match orderParam
     | "lowest-first" => "lowest-first"
     | "highest-first" => "highest-first"
-    | _ => "highest-first"
-  => loadTopLikedRouteData({ order: order })
+    | _ => Reflect.get(options or {}, "order") or "highest-first"
+  resolvedOptions = Object.assign({}, options or {}, { order: order })
+  => loadTopLikedRouteData(resolvedOptions)
