@@ -9,7 +9,7 @@ export schema VoteTotals = {
   dislikes: Number
 }
 
-export schema VoteTotalsByCountry = ts { ReadonlyMap<string, VoteTotals> }
+export schema VoteTotalsByCountry = Map<String, VoteTotals>
 export schema RedisVoteStorageConfig = ts { { url: string } }
 export schema RedisVoteStorageError = ts { any }
 export schema RedisVoteClient = ts { { connect: () => Promise<unknown>; hGet: (key: string, field: string) => Promise<string | null>; hGetAll: (key: string) => Promise<Record<string, string>>; hIncrBy: (key: string, field: string, increment: number) => Promise<number>; } }
@@ -70,13 +70,13 @@ export createRedisVoteStorage = (options?: ts { RedisVoteStorageOptions }) =>
       likes = Option.getOrElse(Option.fromNullishOr(likesByCountry), () => Object.freeze({}))
       dislikes = Option.getOrElse(Option.fromNullishOr(dislikesByCountry), () => Object.freeze({}))
       allKeys = Object.keys(likes).concat(Object.keys(dislikes))
-      countryCodes = Array.from(ts { new Set(allKeys) })
+      countryCodes = Array.from(Set(allKeys))
       entries = countryCodes.map((code) => [code, {
         countryCode: code,
         likes: Number(Option.getOrElse(Option.fromNullishOr(likes[code]), () => 0)),
         dislikes: Number(Option.getOrElse(Option.fromNullishOr(dislikes[code]), () => 0))
       }])
-      => ts { new Map(entries as any) }
+      => Map(entries)
     }
 
   incrementCountryVoteTotal = (countryCode: String, voteKind: VoteKind) =>
