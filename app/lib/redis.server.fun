@@ -3,82 +3,19 @@ import { createClient } from "redis"
 
 export redisUrlEnvVar = "REDIS_URL"
 
-ts {
-  export type RedisConfig = Readonly<{
-    url: string;
-  }>;
-
-  export type RedisConfigurationError = Readonly<{
-    code: "missing_redis_config";
-    message: string;
-    envVar: typeof redisUrlEnvVar;
-  }>;
-
-  export type RedisConnectionFailure = Readonly<{
-    code: "redis_connection_failed";
-    message: string;
-    cause: unknown;
-  }>;
-
-  export type RedisConnectionError =
-    | RedisConfigurationError
-    | RedisConnectionFailure;
-
-  export type RedisConnectableClient = {
-    connect: () => Promise<unknown>;
-  };
-
-  export type RedisClientFactory<Client extends RedisConnectableClient> = (
-    config: RedisConfig
-  ) => Client;
-
-  export type RedisClientProviderOptions<Client extends RedisConnectableClient> = Readonly<{
-    env?: NodeJS.ProcessEnv;
-    clientFactory: RedisClientFactory<Client>;
-    missingConfigMessage: string;
-    connectionFailureMessage: string;
-  }>;
-
-  export class ClientCache<Client extends RedisConnectableClient> {
-    private clientPromise: Promise<Client> | undefined;
-    constructor(private options: RedisClientProviderOptions<Client>) {}
-
-    get(config: RedisConfig): Effect.Effect<Client, RedisConnectionFailure> {
-      if (!this.clientPromise) {
-        try {
-          const client = this.options.clientFactory(config);
-          this.clientPromise = Promise.resolve(client.connect()).then(
-            () => client,
-            (cause) => {
-              this.clientPromise = undefined;
-              throw cause;
-            }
-          );
-        } catch (cause) {
-          this.clientPromise = undefined;
-          return Effect.fail({
-            code: "redis_connection_failed",
-            message: this.options.connectionFailureMessage,
-            cause,
-          });
-        }
-      }
-      return Effect.tryPromise({
-        try: () => this.clientPromise!,
-        catch: (cause): RedisConnectionFailure => {
-          this.clientPromise = undefined;
-          return {
-            code: "redis_connection_failed",
-            message: this.options.connectionFailureMessage,
-            cause,
-          };
-        },
-      });
-    }
-  }
-
-
+export schema RedisConfig = {
+  url: String
 }
+
+export schema RedisConfigurationError = ts { Readonly<{ code: "missing_redis_config"; message: string; envVar: typeof redisUrlEnvVar }> }
+export schema RedisConnectionFailure = ts { Readonly<{ code: "redis_connection_failed"; message: string; cause: unknown }> }
+export schema RedisConnectionError = ts { RedisConfigurationError | RedisConnectionFailure }
+
+export schema RedisConnectableClient = ts { { connect: () => Promise<unknown> } }
+
+export schema RedisClientFactory<Client> = ts { (config: RedisConfig) => Client }
+
+export schema RedisClientProviderOptions<Client> = ts { Readonly<{ env?: NodeJS.ProcessEnv; clientFactory: (config: RedisConfig) => Client; missingConfigMessage: string; connectionFailureMessage: string; }> }
 
 export resolveRedisUrl = (env?: ts { NodeJS.ProcessEnv }) =>
   variables = Option.getOrElse(env, () => process.env)
@@ -96,19 +33,31 @@ export getRedisConfig = (env?: ts { NodeJS.ProcessEnv }, message?: String) =>
 export createDefaultRedisClient = (config: ts { RedisConfig }): ts { RedisConnectableClient } =>
   => createClient({ url: config.url })
 
-ts {
-  export const createRedisClientProvider = <Client extends RedisConnectableClient>(
-    options: RedisClientProviderOptions<Client>
-  ): (() => Effect.Effect<Client, RedisConnectionError>) => {
-    const cache = new ClientCache(options);
-    return () =>
-      Effect.gen(function* () {
-        const config = yield* getRedisConfig(
-          options.env,
-          options.missingConfigMessage
-        );
-        const client = yield* cache.get(config);
-        return client;
-      });
-  };
-}
+export createRedisClientProvider = (options: ts { RedisClientProviderOptions<any> }) =>
+  mut cachedClient: Option<ts { any }> = Option.none()
+  getClient = (config: ts { RedisConfig }) =>
+    match cachedClient
+      | Some(client) => Effect.succeed(client)
+      | None =>
+          Effect.flatMap(
+            Effect.mapError(
+              Effect.tryPromise(() => {
+                client = options.clientFactory(config)
+                => Promise.resolve(client.connect()).then(() => client, (cause) => {
+                  cachedClient = Option.none()
+                  => Promise.reject(cause)
+                })
+              }),
+              (err: ts { any }) => Object.freeze({ code: "redis_connection_failed", message: options.connectionFailureMessage, cause: Option.getOrElse(Option.fromNullishOr(err.cause), () => err) })
+            ),
+            (client) => {
+              cachedClient = Option.some(client)
+              => Effect.succeed(client)
+            }
+          )
+
+  => () => effect {
+    config <- getRedisConfig(options.env, options.missingConfigMessage)
+    client <- getClient(config)
+    => client
+  }
