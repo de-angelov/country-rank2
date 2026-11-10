@@ -122,37 +122,21 @@ export getDefaultApplicationLogger = () =>
       defaultApplicationLogger = Option.some(created)
       => created
 
-delegateDebug = (arg0: ts { any }, arg1?: ts { any }, arg2?: ts { any }) =>
+delegateDebug = (...args: ts { Parameters<PinoLogger["debug"]> }) =>
   instance = getDefaultApplicationLogger()
-  match arg2
-    | Some(third) => instance.debug(arg0, Option.getOrUndefined(arg1), third)
-    | None => match arg1
-      | Some(second) => instance.debug(arg0, second)
-      | None => instance.debug(arg0)
+  => instance.debug(...args)
 
-delegateInfo = (arg0: ts { any }, arg1?: ts { any }, arg2?: ts { any }) =>
+delegateInfo = (...args: ts { Parameters<PinoLogger["info"]> }) =>
   instance = getDefaultApplicationLogger()
-  match arg2
-    | Some(third) => instance.info(arg0, Option.getOrUndefined(arg1), third)
-    | None => match arg1
-      | Some(second) => instance.info(arg0, second)
-      | None => instance.info(arg0)
+  => instance.info(...args)
 
-delegateWarn = (arg0: ts { any }, arg1?: ts { any }, arg2?: ts { any }) =>
+delegateWarn = (...args: ts { Parameters<PinoLogger["warn"]> }) =>
   instance = getDefaultApplicationLogger()
-  match arg2
-    | Some(third) => instance.warn(arg0, Option.getOrUndefined(arg1), third)
-    | None => match arg1
-      | Some(second) => instance.warn(arg0, second)
-      | None => instance.warn(arg0)
+  => instance.warn(...args)
 
-delegateError = (arg0: ts { any }, arg1?: ts { any }, arg2?: ts { any }) =>
+delegateError = (...args: ts { Parameters<PinoLogger["error"]> }) =>
   instance = getDefaultApplicationLogger()
-  match arg2
-    | Some(third) => instance["error"](arg0, Option.getOrUndefined(arg1), third)
-    | None => match arg1
-      | Some(second) => instance["error"](arg0, second)
-      | None => instance["error"](arg0)
+  => instance["error"](...args)
 
 export logger: ApplicationLogger = {
   debug: delegateDebug,
