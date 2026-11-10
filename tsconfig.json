@@ -16,7 +16,7 @@
     "allowArbitraryExtensions": true,
     "allowImportingTsExtensions": true,
     "paths": {
-      "~/*": ["./app/*"]
+      "~/*": ["./app/*", "./.funscript/types/app/*"]
     },
     "esModuleInterop": true,
     "verbatimModuleSyntax": true,
