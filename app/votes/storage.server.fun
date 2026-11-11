@@ -10,13 +10,23 @@ export schema VoteTotals = {
 }
 
 export schema VoteTotalsByCountry = Map<String, VoteTotals>
-export schema RedisVoteStorageConfig = ts { { url: string } }
-export schema RedisVoteStorageError = ts { any }
-export schema RedisVoteClient = ts { { connect: () => Promise<unknown>; hGet: (key: string, field: string) => Promise<string | null>; hGetAll: (key: string) => Promise<Record<string, string>>; hIncrBy: (key: string, field: string, increment: number) => Promise<number>; } }
-export schema RedisVoteClientFactory = ts { (config: { url: string }) => RedisVoteClient }
-export schema RedisVoteStorageOptions = ts { Readonly<{ env?: NodeJS.ProcessEnv; clientFactory?: RedisVoteClientFactory; }> }
+export schema RedisVoteStorageConfig = {
+  url: String
+}
+export schema RedisVoteStorageError = Any
+export schema RedisVoteClient = {
+  connect: () => Promise<Unknown>
+  hGet: (key: String, field: String) => Promise<String | Null>
+  hGetAll: (key: String) => Promise<Record<String, String>>
+  hIncrBy: (key: String, field: String, increment: Number) => Promise<Number>
+}
+export schema RedisVoteClientFactory = (config: RedisVoteStorageConfig) => RedisVoteClient
+export schema RedisVoteStorageOptions = {
+  env?: NodeJS.ProcessEnv
+  clientFactory?: RedisVoteClientFactory
+}
 
-export getRedisVoteStorageConfig = (env?: ts { NodeJS.ProcessEnv }) =>
+export getRedisVoteStorageConfig = (env?: NodeJS.ProcessEnv) =>
   => getRedisConfig(Option.getOrUndefined(env), "REDIS_URL must be set to read or write vote totals.")
 
 export validateCountryCode = (countryCode: String) =>
@@ -30,11 +40,11 @@ export voteTotalsKey = (voteKind: VoteKind) =>
     | "like" => "country:votes:likes"
     | _ => "country:votes:dislikes"
 
-export createDefaultRedisVoteClient = (config: ts { RedisVoteStorageConfig }): ts { RedisVoteClient } =>
-  => ts { createDefaultRedisClient(config) as RedisVoteClient }
+export createDefaultRedisVoteClient = (config: RedisVoteStorageConfig): RedisVoteClient =>
+  => createDefaultRedisClient(config)
 
-export createRedisVoteStorage = (options?: ts { RedisVoteStorageOptions }) =>
-  opts = Option.getOrElse(options, () => ts { ({}) as RedisVoteStorageOptions })
+export createRedisVoteStorage = (options?: RedisVoteStorageOptions) =>
+  opts = Option.getOrElse(options, () => ({}))
   clientFactory = Option.getOrElse(Option.fromNullishOr(opts.clientFactory), () => createDefaultRedisVoteClient)
   getClient = createRedisClientProvider({
     env: opts.env,
@@ -43,10 +53,10 @@ export createRedisVoteStorage = (options?: ts { RedisVoteStorageOptions }) =>
     connectionFailureMessage: "Failed to connect to Redis vote storage."
   })
 
-  runRedis = (tryFn: ts { () => Promise<any> }, message: String) =>
+  runRedis = (tryFn: () => Promise<Unknown>, message: String) =>
     Effect.mapError(
       Effect.tryPromise(tryFn),
-      (cause: ts { any }) => Object.freeze({ code: "redis_command_failed", message: message, cause: Option.getOrElse(Option.fromNullishOr(cause.cause), () => cause) })
+      (cause: Any) => Object.freeze({ code: "redis_command_failed", message: message, cause: Option.getOrElse(Option.fromNullishOr(cause.cause), () => cause) })
     )
 
   readCountryVoteTotals = (countryCode: String) =>

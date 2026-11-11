@@ -85,7 +85,7 @@ storageErrorResponse = (failure: Unknown) =>
   errorBody = { code: code, message: message, ...envDetails, ...countryDetails }
   => Response.json({ ok: false, error: errorBody }, { status: status })
 
-toStorageEffect = (operation: ts { Effect.Effect<VoteTotals, RedisVoteStorageError> | Promise<VoteTotals> }): ts { Effect.Effect<VoteTotals, unknown> } =>
+toStorageEffect = (operation: Effect<VoteTotals, RedisVoteStorageError> | Promise<VoteTotals>): Effect<VoteTotals, Unknown> =>
   when Effect.isEffect(operation) => operation
   => Effect.mapError(Effect.tryPromise(() => operation), (failure) => failure.cause)
 

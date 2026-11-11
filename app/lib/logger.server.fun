@@ -2,7 +2,7 @@ import { Effect, Option } from "effect"
 import { default as pino } from "pino"
 import type { Logger as PinoLogger, DestinationStream } from "pino"
 
-export schema ApplicationLogger = ts { Pick<PinoLogger, "debug" | "info" | "warn" | "error"> }
+export schema ApplicationLogger = Pick<PinoLogger, "debug" | "info" | "warn" | "error">
 
 export logLevelEnvVar = "LOG_LEVEL"
 export redactedLogValue = "[Redacted]"
@@ -18,7 +18,7 @@ export supportedLogLevels = [
   "silent"
 ]
 
-export schema SupportedLogLevel = ts { (typeof supportedLogLevels)[number] }
+export schema SupportedLogLevel = (typeof supportedLogLevels)[Number]
 
 export sensitiveLogRedactionPaths = [
   "authorization",
@@ -84,7 +84,12 @@ export sensitiveLogRedactionPaths = [
   "payment_method_data"
 ]
 
-export getLogLevel = (env?: ts { NodeJS.ProcessEnv }): SupportedLogLevel =>
+export schema CreateApplicationLoggerOptions = {
+  env?: NodeJS.ProcessEnv
+  stream?: DestinationStream
+}
+
+export getLogLevel = (env?: NodeJS.ProcessEnv): SupportedLogLevel =>
   rawEnv = Option.getOrElse(env, () => process.env)
   rawLevel = Option.fromNullishOr(rawEnv[logLevelEnvVar])
   configuredLevel = match rawLevel
@@ -100,9 +105,10 @@ export getLogLevel = (env?: ts { NodeJS.ProcessEnv }): SupportedLogLevel =>
     | "silent" => "silent"
     | _ => defaultLogLevel
 
-export createApplicationLogger = (options: ts { { env?: NodeJS.ProcessEnv; stream?: DestinationStream } } = {}) =>
-  rawEnv = Reflect.get(options or {}, "env")
-  rawStream = Reflect.get(options or {}, "stream")
+export createApplicationLogger = (options?: CreateApplicationLoggerOptions) =>
+  opts = Option.getOrElse(options, () => ({}))
+  rawEnv = Option.getOrUndefined(opts.env)
+  rawStream = Option.getOrUndefined(opts.stream)
   config = {
     level: getLogLevel(rawEnv),
     redact: {
@@ -112,7 +118,7 @@ export createApplicationLogger = (options: ts { { env?: NodeJS.ProcessEnv; strea
   }
   => pino(config, rawStream)
 
-mut defaultApplicationLogger: Option<ts { PinoLogger }> = Option.none()
+mut defaultApplicationLogger: Option<PinoLogger> = Option.none()
 
 export getDefaultApplicationLogger = () =>
   match defaultApplicationLogger
@@ -122,19 +128,19 @@ export getDefaultApplicationLogger = () =>
       defaultApplicationLogger = Option.some(created)
       => created
 
-delegateDebug = (...args: ts { Parameters<PinoLogger["debug"]> }) =>
+delegateDebug = (...args: Parameters<PinoLogger["debug"]>) =>
   instance = getDefaultApplicationLogger()
   => instance.debug(...args)
 
-delegateInfo = (...args: ts { Parameters<PinoLogger["info"]> }) =>
+delegateInfo = (...args: Parameters<PinoLogger["info"]>) =>
   instance = getDefaultApplicationLogger()
   => instance.info(...args)
 
-delegateWarn = (...args: ts { Parameters<PinoLogger["warn"]> }) =>
+delegateWarn = (...args: Parameters<PinoLogger["warn"]>) =>
   instance = getDefaultApplicationLogger()
   => instance.warn(...args)
 
-delegateError = (...args: ts { Parameters<PinoLogger["error"]> }) =>
+delegateError = (...args: Parameters<PinoLogger["error"]>) =>
   instance = getDefaultApplicationLogger()
   => instance["error"](...args)
 

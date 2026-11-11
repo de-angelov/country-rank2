@@ -28,7 +28,7 @@ export buttonVariants = cva(
   }
 )
 
-export Button = (props: HtmlProps<"button"> & ts { VariantProps<typeof buttonVariants> } & { asChild?: Boolean }) =>
+export Button = (props: HtmlProps<"button"> & VariantProps<typeof buttonVariants> & { asChild?: Boolean }) =>
   match props.asChild
     | true => <Slot data-slot="button" className={cn(buttonVariants({ variant: props.variant, size: props.size, className: props.className }))} {...props} />
     | _ => <button data-slot="button" className={cn(buttonVariants({ variant: props.variant, size: props.size, className: props.className }))} {...props} />

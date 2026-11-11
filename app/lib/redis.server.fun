@@ -7,35 +7,50 @@ export schema RedisConfig = {
   url: String
 }
 
-export schema RedisConfigurationError = ts { Readonly<{ code: "missing_redis_config"; message: string; envVar: typeof redisUrlEnvVar }> }
-export schema RedisConnectionFailure = ts { Readonly<{ code: "redis_connection_failed"; message: string; cause: unknown }> }
-export schema RedisConnectionError = ts { RedisConfigurationError | RedisConnectionFailure }
+export schema RedisConfigurationError = {
+  code: "missing_redis_config"
+  message: String
+  envVar: typeof redisUrlEnvVar
+}
+export schema RedisConnectionFailure = {
+  code: "redis_connection_failed"
+  message: String
+  cause: Unknown
+}
+export schema RedisConnectionError = RedisConfigurationError | RedisConnectionFailure
 
-export schema RedisConnectableClient = ts { { connect: () => Promise<unknown> } }
+export schema RedisConnectableClient = {
+  connect: () => Promise<Unknown>
+}
 
-export schema RedisClientFactory<Client> = ts { (config: RedisConfig) => Client }
+export schema RedisClientFactory<Client> = (config: RedisConfig) => Client
 
-export schema RedisClientProviderOptions<Client> = ts { Readonly<{ env?: NodeJS.ProcessEnv; clientFactory: (config: RedisConfig) => Client; missingConfigMessage: string; connectionFailureMessage: string; }> }
+export schema RedisClientProviderOptions<Client> = {
+  env?: NodeJS.ProcessEnv
+  clientFactory: (config: RedisConfig) => Client
+  missingConfigMessage: String
+  connectionFailureMessage: String
+}
 
-export resolveRedisUrl = (env?: ts { NodeJS.ProcessEnv }) =>
+export resolveRedisUrl = (env?: NodeJS.ProcessEnv) =>
   variables = Option.getOrElse(env, () => process.env)
   url = Option.map(Option.fromNullishOr(variables[redisUrlEnvVar]), (value) => value.trim())
   nonEmpty = Option.filter(url, (value) => value.length #! 0)
   => Option.getOrNull(nonEmpty)
 
-export getRedisConfig = (env?: ts { NodeJS.ProcessEnv }, message?: String) =>
+export getRedisConfig = (env?: NodeJS.ProcessEnv, message?: String) =>
   url = Option.fromNullishOr(resolveRedisUrl(Option.getOrUndefined(env)))
   failureMessage = Option.getOrElse(message, () => "REDIS_URL must be set to connect to Redis.")
   => match url
     | Some(value) => Effect.succeed({ url: value })
     | None => Effect.fail(Object.freeze({ code: "missing_redis_config", message: failureMessage, envVar: redisUrlEnvVar }))
 
-export createDefaultRedisClient = (config: ts { RedisConfig }): ts { RedisConnectableClient } =>
+export createDefaultRedisClient = (config: RedisConfig): RedisConnectableClient =>
   => createClient({ url: config.url })
 
-export createRedisClientProvider = (options: ts { RedisClientProviderOptions<any> }) =>
-  mut cachedClient: Option<ts { any }> = Option.none()
-  getClient = (config: ts { RedisConfig }) =>
+export createRedisClientProvider = <Client>(options: RedisClientProviderOptions<Client>) =>
+  mut cachedClient: Option<Client> = Option.none()
+  getClient = (config: RedisConfig) =>
     match cachedClient
       | Some(client) => Effect.succeed(client)
       | None =>
@@ -48,7 +63,7 @@ export createRedisClientProvider = (options: ts { RedisClientProviderOptions<any
                   => Promise.reject(cause)
                 })
               }),
-              (err: ts { any }) => Object.freeze({ code: "redis_connection_failed", message: options.connectionFailureMessage, cause: Option.getOrElse(Option.fromNullishOr(err.cause), () => err) })
+              (err: Any) => Object.freeze({ code: "redis_connection_failed", message: options.connectionFailureMessage, cause: Option.getOrElse(Option.fromNullishOr(err.cause), () => err) })
             ),
             (client) => {
               cachedClient = Option.some(client)
