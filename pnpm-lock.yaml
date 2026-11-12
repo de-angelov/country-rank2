@@ -1804,7 +1804,7 @@ packages:
     resolution: {integrity: sha512-xckBUXyTIqT97tq2x2AMb+g163b5JFysYk0x4qxNFwbfQkmNZoiRHb6sPzI9/QV33WeuvVYBUIiD4NzNIyqaRQ==}
 
   funscript@file:funscript-0.1.0.tgz:
-    resolution: {integrity: sha512-DPW5Rd+ZOFnziUjQXtrvpzhIP16go2zTH3hzsV9fdvUEYKPK0lXRjnHfmHvHbNH4ri86/TwQpqdyS2O0nq1t+g==, tarball: file:funscript-0.1.0.tgz}
+    resolution: {integrity: sha512-QMU/tPYRz5RJ87aXZgLMXgSikOM1vkcah1Cx9Tw4n98pdibJy1rzfzkD+nSqvyu+vcvgn+TI3vmg65qgEeGEZw==, tarball: file:funscript-0.1.0.tgz}
     version: 0.1.0
     hasBin: true
 
