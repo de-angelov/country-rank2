@@ -68,7 +68,9 @@ export getCountryCardFlagImageUrl = ({ flagImageUrl }: CountryFlagInput): String
 
 export CountryCard = (props: SchemaInput<CountryCardProps>) =>
   country = props.country
-  className = props.className or ""
+  className = match Option.fromNullishOr(props.className)
+    | Some(cls) => cls
+    | None => ""
   likeCount = country.likes["toLocaleString"]("en-US")
   dislikeCount = country.dislikes["toLocaleString"]("en-US")
   totalVotes = country.likes + country.dislikes

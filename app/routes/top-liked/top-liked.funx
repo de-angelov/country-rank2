@@ -15,22 +15,29 @@ readLoaderCountries = (payload: Unknown) =>
   direct = Schema.decodeUnknownOption(Schema.Array(Country))(payload)
   wrapped = Schema.decodeUnknownOption(Schema.Struct({ countries: Schema.optional(Schema.Array(Country)) }))(payload)
   => Option.getOrElse(direct, () => match wrapped
-    | Some(result) => result.countries or []
+    | Some(result) => match Option.fromNullishOr(result.countries)
+      | Some(c) => c
+      | None => []
     | None => []
   )
 
 export TopLiked = (props: { countries?: Array<Country>, initialOrder?: RankingOrder }) =>
   loaderData = Option.try(() => useLoaderData())
   searchParams = Option.try(() => useSearchParams())
-  initialOrder = props.initialOrder or match searchParams
+  orderFromParams = match searchParams
     | Some([params, _]) => match params.get("order") #= "lowest-first"
       | true => LowestFirst
       | false => HighestFirst
     | None => HighestFirst
+  initialOrder = match props.initialOrder
+    | Some(order) => order
+    | None => orderFromParams
   [order, setOrder] = useState(initialOrder)
-  countries = props.countries or match loaderData
-    | Some(payload) => readLoaderCountries(payload)
-    | None => []
+  countries = match props.countries
+    | Some(c) => c
+    | None => match loaderData
+      | Some(payload) => readLoaderCountries(payload)
+      | None => []
   lowest = isLowestFirst(order)
   displayedCountries = useMemo(() => sortCountriesByLikes(countries, order), [countries, order])
   handleOrderChange = (nextOrder: RankingOrder) =>

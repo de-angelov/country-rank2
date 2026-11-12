@@ -33,14 +33,18 @@ export schema RedisClientProviderOptions<Client> = {
 }
 
 export resolveRedisUrl = (env?: NodeJS.ProcessEnv) =>
-  variables = env or process.env
+  variables = match env
+    | Some(e) => e
+    | None => process.env
   url = Option.map(Option.fromNullishOr(variables[redisUrlEnvVar]), (value) => value |> String.trim)
   nonEmpty = Option.filter(url, (value) => value.length #! 0)
   => Option.getOrNull(nonEmpty)
 
 export getRedisConfig = (env?: NodeJS.ProcessEnv, message?: String) =>
-  url = Option.fromNullishOr(resolveRedisUrl(Option.getOrUndefined(env)))
-  failureMessage = message or "REDIS_URL must be set to connect to Redis."
+  url = Option.fromNullishOr(resolveRedisUrl(env))
+  failureMessage = match message
+    | Some(msg) => msg
+    | None => "REDIS_URL must be set to connect to Redis."
   => match url
     | Some(value) => Effect.succeed({ url: value })
     | None => Effect.fail({ code: "missing_redis_config", message: failureMessage, envVar: redisUrlEnvVar })
@@ -63,7 +67,13 @@ export createRedisClientProvider = <Client>(options: RedisClientProviderOptions<
                   => Promise.reject(cause)
                 })
               }),
-              (err: Any) => ({ code: "redis_connection_failed", message: options.connectionFailureMessage, cause: err.cause or err })
+              (err: Any) => ({
+                code: "redis_connection_failed",
+                message: options.connectionFailureMessage,
+                cause: match Option.fromNullishOr(err.cause)
+                  | Some(c) => c
+                  | None => err
+              })
             ),
             (client) => {
               cachedClient = Option.some(client)

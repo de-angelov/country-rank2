@@ -27,7 +27,7 @@ export schema RedisVoteStorageOptions = {
 }
 
 export getRedisVoteStorageConfig = (env?: NodeJS.ProcessEnv) =>
-  getRedisConfig(Option.getOrUndefined(env), "REDIS_URL must be set to read or write vote totals.")
+  getRedisConfig(env, "REDIS_URL must be set to read or write vote totals.")
 
 export validateCountryCode = (countryCode: String) =>
   normalized = countryCode |> String.trim |> String.toUpperCase
@@ -44,8 +44,12 @@ export createDefaultRedisVoteClient = (config: RedisVoteStorageConfig): RedisVot
   createDefaultRedisClient(config)
 
 export createRedisVoteStorage = (options?: RedisVoteStorageOptions) =>
-  opts = options or {}
-  clientFactory = opts.clientFactory or createDefaultRedisVoteClient
+  opts = match options
+    | Some(o) => o
+    | None => {}
+  clientFactory = match Option.fromNullishOr(opts.clientFactory)
+    | Some(factory) => factory
+    | None => createDefaultRedisVoteClient
   getClient = createRedisClientProvider({
     env: opts.env,
     clientFactory,
@@ -56,8 +60,21 @@ export createRedisVoteStorage = (options?: RedisVoteStorageOptions) =>
   runRedis = (tryFn: () => Promise<Unknown>, message: String) =>
     Effect.mapError(
       Effect.tryPromise(tryFn),
-      (cause: Any) => ({ code: "redis_command_failed", message: message, cause: cause.cause or cause })
+      (cause: Any) => ({
+        code: "redis_command_failed",
+        message: message,
+        cause: match Option.fromNullishOr(cause.cause)
+          | Some(c) => c
+          | None => cause
+      })
     )
+
+  parseVoteCount = (rawCount: Option<String>) =>
+    match rawCount
+      | Some(str) => match Number.parse(str)
+        | Some(n) => n
+        | None => 0
+      | None => 0
 
   readCountryVoteTotals = (countryCode: String) =>
     effect {
@@ -67,8 +84,8 @@ export createRedisVoteStorage = (options?: RedisVoteStorageOptions) =>
       dislikes <- runRedis(() => client.hGet(voteTotalsKey("dislike"), normalized), "Failed to read country vote totals from Redis.")
       => {
         countryCode: normalized,
-        likes: Number.parse(likes or "0") or 0,
-        dislikes: Number.parse(dislikes or "0") or 0
+        likes: parseVoteCount(Option.fromNullishOr(likes)),
+        dislikes: parseVoteCount(Option.fromNullishOr(dislikes))
       }
     }
 
@@ -77,14 +94,18 @@ export createRedisVoteStorage = (options?: RedisVoteStorageOptions) =>
       client <- getClient()
       likesByCountry <- runRedis(() => client.hGetAll(voteTotalsKey("like")), "Failed to read country vote totals from Redis.")
       dislikesByCountry <- runRedis(() => client.hGetAll(voteTotalsKey("dislike")), "Failed to read country vote totals from Redis.")
-      likes = likesByCountry or {}
-      dislikes = dislikesByCountry or {}
+      likes = match Option.fromNullishOr(likesByCountry)
+        | Some(l) => l
+        | None => {}
+      dislikes = match Option.fromNullishOr(dislikesByCountry)
+        | Some(d) => d
+        | None => {}
       allKeys = Array.appendAll(Record.keys(likes), Record.keys(dislikes))
       countryCodes = Array.dedupe(allKeys)
       entries = countryCodes |> Array.map((code) => [code, {
         countryCode: code,
-        likes: Number.parse(likes[code] or "0") or 0,
-        dislikes: Number.parse(dislikes[code] or "0") or 0
+        likes: parseVoteCount(likes[code]),
+        dislikes: parseVoteCount(dislikes[code])
       }])
       => Map(entries)
     }

@@ -29,7 +29,9 @@ readLoaderCountries = (payload: Unknown) =>
   direct = Schema.decodeUnknownOption(Schema.Array(Country))(payload)
   wrapped = Schema.decodeUnknownOption(Schema.Struct({ countries: Schema.optional(Schema.Array(Country)) }))(payload)
   => Option.getOrElse(direct, () => match wrapped
-    | Some(result) => result.countries or []
+    | Some(result) => match Option.fromNullishOr(result.countries)
+      | Some(c) => c
+      | None => []
     | None => []
   )
 
@@ -49,15 +51,21 @@ export Home = (props: { countries?: Array<Country>, initialSearch?: String }) =>
     | Some([_, setSp]) => Option.some(setSp)
     | None => Option.none()
   queryFromParams = match searchParamsTuple
-    | Some([params, _]) => params.get("q") or ""
+    | Some([params, _]) => match Option.fromNullishOr(params.get("q"))
+      | Some(q) => q
+      | None => ""
     | None => ""
+  initialQuery = match props.initialSearch
+    | Some(search) => search
+    | None => queryFromParams
   initialSearch = Option.getOrUndefined(props.initialSearch)
-  initialQuery = props.initialSearch or queryFromParams
 
   [searchInput, setSearchInput] = useState(initialQuery)
   [debouncedQuery, setDebouncedQuery] = useState(initialQuery)
 
-  countries = props.countries or rawCountries
+  countries = match props.countries
+    | Some(c) => c
+    | None => rawCountries
   sortedCountries = useMemo(() => sortCountriesByDisplayName(countries), [countries])
   displayedCountries = useMemo(() => filterCountriesByName(sortedCountries, debouncedQuery), [sortedCountries, debouncedQuery])
 

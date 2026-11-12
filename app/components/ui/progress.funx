@@ -2,15 +2,21 @@ import * as ProgressPrimitive from "@radix-ui/react-progress"
 import { cn } from "../../lib/utils.js"
 
 export Progress = (props: HtmlProps<"div"> & { indicatorClassName?: String, value?: Number }) =>
-  <ProgressPrimitive.Root
+  value = match Option.fromNullishOr(props.value)
+    | Some(v) => v
+    | None => 0
+  indicatorClass = match Option.fromNullishOr(props.indicatorClassName)
+    | Some(cls) => cls
+    | None => ""
+  => <ProgressPrimitive.Root
     data-slot="progress"
     className={cn("relative h-4 w-full overflow-hidden rounded-base border-2 border-border bg-secondary-background shadow-shadow", props.className)}
-    value={props.value}
+    value={value}
     {...props}
   >
     <ProgressPrimitive.Indicator
       data-slot="progress-indicator"
-      className={cn("h-full w-full flex-1 bg-main transition-all", props.indicatorClassName)}
-      style={{ transform: "translateX(-{100 - (props.value or 0)}%)" }}
+      className={cn("h-full w-full flex-1 bg-main transition-all", indicatorClass)}
+      style={{ transform: "translateX(-{100 - value}%)" }}
     />
   </ProgressPrimitive.Root>

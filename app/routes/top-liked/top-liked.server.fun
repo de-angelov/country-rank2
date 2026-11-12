@@ -35,10 +35,10 @@ export loadTopLikedRouteData = (options: { order?: Unknown, readTotals?: () => E
 export loader = (args: Unknown = {}, options: Unknown = {}) =>
   request = Reflect.get(args or {}, "request")
   url = globalThis.String(Reflect.get(request or {}, "url") or "http://localhost")
-  query = (url |> String.split("?"))[1] or ""
-  queryWithoutHash = (query |> String.split("#"))[0] or ""
-  orderParameter = (queryWithoutHash |> String.split("&") |> Array.findFirst((parameter) => ((parameter |> String.split("="))[0] or "") #= "order")) or ""
-  orderParam = (orderParameter |> String.split("="))[1] or ""
+  query = match (url |> String.split("?"))[1] | Some(q) => q | None => ""
+  queryWithoutHash = match (query |> String.split("#"))[0] | Some(q) => q | None => ""
+  orderParameter = match (queryWithoutHash |> String.split("&") |> Array.findFirst((parameter) => (match (parameter |> String.split("="))[0] | Some(p) => p | None => "") #= "order")) | Some(p) => p | None => ""
+  orderParam = match (orderParameter |> String.split("="))[1] | Some(p) => p | None => ""
   order = match orderParam
     | "lowest-first" => "lowest-first"
     | "highest-first" => "highest-first"

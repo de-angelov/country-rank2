@@ -50,7 +50,10 @@ export validateVoteRequest = (payload: Object) =>
     | None => { ok: false, error: { code: "invalid_vote_request", message: "Vote request payload is invalid.", fieldErrors: fieldErrors } }
 
 export readVoteRequestPayload = (request: Request) =>
-  contentType = request.headers.get("content-type") or ""
+  rawContentType = Option.fromNullishOr(request.headers.get("content-type"))
+  contentType = match rawContentType
+    | Some(ct) => ct
+    | None => ""
   reading = match contentType |> String.includes("application/json")
     | true => Effect.map(Effect.option(Effect.tryPromise(() => request.json())), (body) => match body
       | Some(value) => match Schema.decodeUnknownOption(Schema.Record(Schema.String, Schema.Unknown))(value)
@@ -67,9 +70,15 @@ export readVoteRequestPayload = (request: Request) =>
 storageErrorResponse = (failure: Unknown) =>
   detailSchema = Schema.Struct({ code: Schema.optional(Schema.String), message: Schema.optional(Schema.String), envVar: Schema.optional(Schema.String), countryCode: Schema.optional(Schema.String) })
   details = Option.getOrElse(Schema.decodeUnknownOption(detailSchema)(failure), () => Schema.decodeUnknownSync(detailSchema)({}))
-  code = details.code or "redis_command_failed"
-  message = details.message or "Failed to increment country vote total."
-  statusCode = details.code or ""
+  code = match Option.fromNullishOr(details.code)
+    | Some(c) => c
+    | None => "redis_command_failed"
+  message = match Option.fromNullishOr(details.message)
+    | Some(m) => m
+    | None => "Failed to increment country vote total."
+  statusCode = match Option.fromNullishOr(details.code)
+    | Some(c) => c
+    | None => ""
   status = match statusCode
     | "invalid_country_code" => 400
     | "missing_redis_config" => 503
