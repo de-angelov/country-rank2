@@ -90,7 +90,7 @@ export schema CreateApplicationLoggerOptions = {
 }
 
 export getLogLevel = (env?: NodeJS.ProcessEnv): SupportedLogLevel =>
-  rawEnv = Option.getOrElse(env, () => process.env)
+  rawEnv = env or process.env
   rawLevel = Option.fromNullishOr(rawEnv[logLevelEnvVar])
   configuredLevel = match rawLevel
     | Some(level) => level.trim().toLowerCase()

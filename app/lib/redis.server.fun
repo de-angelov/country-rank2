@@ -33,14 +33,14 @@ export schema RedisClientProviderOptions<Client> = {
 }
 
 export resolveRedisUrl = (env?: NodeJS.ProcessEnv) =>
-  variables = Option.getOrElse(env, () => process.env)
+  variables = env or process.env
   url = Option.map(Option.fromNullishOr(variables[redisUrlEnvVar]), (value) => value.trim())
   nonEmpty = Option.filter(url, (value) => value.length #! 0)
   => Option.getOrNull(nonEmpty)
 
 export getRedisConfig = (env?: NodeJS.ProcessEnv, message?: String) =>
   url = Option.fromNullishOr(resolveRedisUrl(Option.getOrUndefined(env)))
-  failureMessage = Option.getOrElse(message, () => "REDIS_URL must be set to connect to Redis.")
+  failureMessage = message or "REDIS_URL must be set to connect to Redis."
   => match url
     | Some(value) => Effect.succeed({ url: value })
     | None => Effect.fail(Object.freeze({ code: "missing_redis_config", message: failureMessage, envVar: redisUrlEnvVar }))

@@ -16,13 +16,13 @@ export schema RankingOrderControlsProps = {
 }
 
 export RankingOrderControls = (props: RankingOrderControlsProps) =>
-  active = Option.getOrElse(props.order, () => Option.getOrElse(props.currentOrder, () => HighestFirst))
+  active = (props.order or props.currentOrder) or HighestFirst
   isHighest = match active
     | HighestFirst => true
     | LowestFirst => false
   ignoreOrderChange = (nextOrder: RankingOrder) =>
     => nextOrder
-  onOrderChange = Option.getOrElse(props.onOrderChange, () => ignoreOrderChange)
+  onOrderChange = props.onOrderChange or ignoreOrderChange
   handleSelect = (nextOrder: RankingOrder) =>
     onOrderChange(nextOrder)
     => nextOrder
