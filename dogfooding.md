@@ -1,6 +1,6 @@
 # FunScript dogfooding
 
-Observed against a bundled local development build based on FunScript commit `56322c7`.
+Observed against a bundled local development build based on FunScript commit `c9edc5a`, including uncommitted optional-argument and AssemblyScript changes.
 
 ## Working: Vite and React Router routes
 
@@ -10,7 +10,7 @@ Native side-effect imports also work: `app/root.funx` imports the CSS directly. 
 
 ## Optional inputs
 
-Optional parameters now become real Effect `Option` values inside FunScript, and defaulted parameters accept omitted or `undefined` arguments. `SchemaInput<Name>` exposes a schema's encoded input type without implicitly decoding it; schema defaults are now applied during actual decoding. The ranking helpers and country/list components use these features. Optional handling does not validate values supplied by JavaScript; schema decoding is still required for runtime validation.
+Optional parameters now become real Effect `Option` values inside FunScript, and defaulted parameters accept omitted or `undefined` arguments. Forward an optional parameter to another optional parameter with `Option.getOrUndefined`; a supplied Option is now treated as a value rather than automatically unwrapped. `SchemaInput<Name>` exposes a schema's encoded input type without implicitly decoding it; schema defaults are now applied during actual decoding. The ranking helpers and country/list components use these features. Optional handling does not validate values supplied by JavaScript; schema decoding is still required for runtime validation.
 
 Record parameters support optional callback props and produce real Effect `Option` values inside FunScript. The ranking controls use a named compile-time record contract. Optional fields can occur inside nested records, including an optional parent inspected through a `Some` match. Immutable aliases and passing a record without defaults to a verified local or imported FunScript function that declares optional record fields preserve the original object; named, default, and namespace imports and immutable re-export aliases are supported. Explicit `js` calls can also receive it. Other whole-record forwarding, returns, and indexing remain restricted.
 

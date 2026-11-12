@@ -39,7 +39,7 @@ export resolveRedisUrl = (env?: NodeJS.ProcessEnv) =>
   => Option.getOrNull(nonEmpty)
 
 export getRedisConfig = (env?: NodeJS.ProcessEnv, message?: String) =>
-  url = Option.fromNullishOr(resolveRedisUrl(env))
+  url = Option.fromNullishOr(resolveRedisUrl(Option.getOrUndefined(env)))
   failureMessage = Option.fromNullishOr(message) |> Option.getOrElse(() => "REDIS_URL must be set to connect to Redis.")
   => match url
     | Some(value) => Effect.succeed({ url: value })
@@ -50,39 +50,34 @@ export createDefaultRedisClient = (config: RedisConfig) =>
 
 export createRedisClientProvider = <Client extends RedisConnectableClient>(options: RedisClientProviderOptions<Client>) =>
   mut cachedClient: Option<Client> = Option.none()
+  toConnectionError = (err: Unknown) =>
+    causeRecord = Schema.decodeUnknownOption(Schema.Struct({ cause: Schema.Unknown }))(err)
+    actualCause = match causeRecord
+      | Some(rec) => rec.cause
+      | None => err
+    => {
+      code: "redis_connection_failed",
+      message: options.connectionFailureMessage,
+      cause: actualCause
+    }
+
+  connectClient = (config: RedisConfig) =>
+    effect {
+      client <- Effect.try(() => options.clientFactory(config))
+      _ <- Effect.tryPromise(() => client.connect())
+      cachedClient = Option.some(client)
+      => client
+    }
+    |> Effect.mapError(toConnectionError)
+
   getClient = (config: RedisConfig) =>
     cachedClient |> Option.match({
       onSome: (client) => Effect.succeed(client),
-      onNone: () =>
-        Effect.flatMap(
-          Effect.mapError(
-            Effect.tryPromise(() => {
-              client = options.clientFactory(config)
-              => Promise.resolve(client.connect()).then(() => client, (cause) => {
-                cachedClient = Option.none()
-                => Promise.reject(cause)
-              })
-            }),
-            (err: Unknown) =>
-              causeRecord = Schema.decodeUnknownOption(Schema.Struct({ cause: Schema.Unknown }))(err)
-              actualCause = match causeRecord
-                | Some(rec) => rec.cause
-                | None => err
-              => ({
-                code: "redis_connection_failed",
-                message: options.connectionFailureMessage,
-                cause: actualCause
-              })
-          ),
-          (client) => {
-            cachedClient = Option.some(client)
-            => Effect.succeed(client)
-          }
-        )
+      onNone: () => connectClient(config)
     })
 
   => () => effect {
-    config <- getRedisConfig(options.env, options.missingConfigMessage)
+    config <- getRedisConfig(Option.getOrUndefined(options.env), options.missingConfigMessage)
     client <- getClient(config)
     => client
   }

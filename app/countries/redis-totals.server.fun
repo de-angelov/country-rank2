@@ -55,7 +55,7 @@ export createFallbackCountries = (countries: Array<Country>): Array<Country> =>
 
 export readCountriesWithVoteTotals = (options?: CountryVoteTotalsOptions) =>
   effect {
-    resolved = resolveOptions(options)
+    resolved = resolveOptions(Option.getOrUndefined(options))
     readTotalsFn = resolved.readTotals
     totalsEffect = readTotalsFn()
     countries <- totalsEffect |> Effect.match({

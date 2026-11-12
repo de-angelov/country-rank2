@@ -1,5 +1,6 @@
 import { Effect, Exit, Cause } from "effect";
 import { describe, expect, it, vi } from "vitest";
+import { createRedisClientProvider } from "../app/lib/redis.server.fun";
 
 import {
   createRedisVoteStorage,
@@ -72,6 +73,42 @@ const getFailureError = <A, E>(exit: Exit.Exit<A, E>): unknown => {
   }
   return exit.cause;
 };
+
+describe("Redis client provider", () => {
+  it("keeps a successful client when a concurrent connection fails", async () => {
+    let rejectFirst!: (error: Error) => void;
+    const failingClient = createClient({}, { connect: () => new Promise((_resolve, reject) => { rejectFirst = reject; }) });
+    const connectedClient = createClient();
+    const factory = vi.fn().mockReturnValueOnce(failingClient).mockReturnValue(connectedClient);
+    const getClient = createRedisClientProvider({
+      env: envWithRedisUrl,
+      clientFactory: factory,
+      missingConfigMessage: "missing",
+      connectionFailureMessage: "connection failed",
+    });
+
+    const pending = Effect.runPromiseExit(getClient());
+    await vi.waitFor(() => expect(factory).toHaveBeenCalledTimes(1));
+    expect(await Effect.runPromise(getClient())).toBe(connectedClient);
+    rejectFirst(new Error("refused"));
+    expect(Exit.isFailure(await pending)).toBe(true);
+    expect(await Effect.runPromise(getClient())).toBe(connectedClient);
+    expect(factory).toHaveBeenCalledTimes(2);
+  });
+
+  it("maps a synchronous factory error into the connection error channel", async () => {
+    const cause = new Error("factory failed");
+    const getClient = createRedisClientProvider({
+      env: envWithRedisUrl,
+      clientFactory: () => { throw cause; },
+      missingConfigMessage: "missing",
+      connectionFailureMessage: "connection failed",
+    });
+    expect(getFailureError(await Effect.runPromiseExit(getClient()))).toMatchObject({
+      code: "redis_connection_failed", message: "connection failed", cause,
+    });
+  });
+});
 
 describe("getRedisVoteStorageConfig", () => {
   it("returns a clear error when Redis configuration is missing", async () => {

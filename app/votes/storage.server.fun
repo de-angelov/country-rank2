@@ -27,7 +27,7 @@ export schema RedisVoteStorageOptions = {
 }
 
 export getRedisVoteStorageConfig = (env?: NodeJS.ProcessEnv) =>
-  getRedisConfig(env, "REDIS_URL must be set to read or write vote totals.")
+  getRedisConfig(Option.getOrUndefined(env), "REDIS_URL must be set to read or write vote totals.")
 
 export validateCountryCode = (countryCode: String) =>
   normalized = countryCode |> String.trim |> String.toUpperCase
