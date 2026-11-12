@@ -34,11 +34,10 @@ readLoaderCountries = (payload: Unknown) =>
   )
 
 updateSearchQuery = (prev: URLSearchParams, query: String) =>
-  next = createSearchParams(prev)
+  entries = Array.fromIterable(prev.entries()) |> Array.filter(([k]) => k #! "q")
   match query.length #= 0
-    | true => next.delete("q")
-    | false => next.set("q", query)
-  => next
+    | true => createSearchParams(entries)
+    | false => createSearchParams(Array.append(entries, ["q", query]))
 
 export Home = (props: { countries?: Array<Country>, initialSearch?: String }) =>
   loaderData = Option.try(() => useLoaderData())

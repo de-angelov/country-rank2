@@ -39,11 +39,10 @@ export TopLiked = (props: { countries?: Array<Country>, initialOrder?: RankingOr
       | Some(params) =>
         [_, setSearchParams] = params
         setSearchParams((prev: URLSearchParams) =>
-          next = createSearchParams(prev)
+          entries = Array.fromIterable(prev.entries()) |> Array.filter(([k]) => k #! "order")
           match isLowestFirst(nextOrder)
-            | true => next.set("order", "lowest-first")
-            | false => next.delete("order")
-          => next
+            | true => createSearchParams(Array.append(entries, ["order", "lowest-first"]))
+            | false => createSearchParams(entries)
         , { replace: true })
       | None => false
     => nextOrder

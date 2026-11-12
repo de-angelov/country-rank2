@@ -1,4 +1,4 @@
-import { Effect, Option } from "effect"
+import { Array, Effect, Number, Option, Record } from "effect"
 import { createDefaultRedisClient, createRedisClientProvider, getRedisConfig, redisUrlEnvVar } from "../lib/redis.server.js"
 
 export schema VoteKind = "like" | "dislike"
@@ -67,8 +67,8 @@ export createRedisVoteStorage = (options?: RedisVoteStorageOptions) =>
       dislikes <- runRedis(() => client.hGet(voteTotalsKey("dislike"), normalized), "Failed to read country vote totals from Redis.")
       => {
         countryCode: normalized,
-        likes: Number(likes or 0),
-        dislikes: Number(dislikes or 0)
+        likes: Number.parse(likes or "0") or 0,
+        dislikes: Number.parse(dislikes or "0") or 0
       }
     }
 
@@ -80,11 +80,11 @@ export createRedisVoteStorage = (options?: RedisVoteStorageOptions) =>
       likes = likesByCountry or {}
       dislikes = dislikesByCountry or {}
       allKeys = Array.appendAll(Record.keys(likes), Record.keys(dislikes))
-      countryCodes = Array.fromIterable(Set(allKeys))
+      countryCodes = Array.dedupe(allKeys)
       entries = countryCodes |> Array.map((code) => [code, {
         countryCode: code,
-        likes: Number(likes[code] or 0),
-        dislikes: Number(dislikes[code] or 0)
+        likes: Number.parse(likes[code] or "0") or 0,
+        dislikes: Number.parse(dislikes[code] or "0") or 0
       }])
       => Map(entries)
     }
