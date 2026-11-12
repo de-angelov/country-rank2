@@ -72,7 +72,7 @@ export createRedisClientProvider = <Client>(options: RedisClientProviderOptions<
           )
 
   => () => effect {
-    config <- getRedisConfig(Option.getOrUndefined(options.env), options.missingConfigMessage)
+    config <- getRedisConfig(options.env, options.missingConfigMessage)
     client <- getClient(config)
     => client
   }

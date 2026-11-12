@@ -17,8 +17,8 @@ export resolveOptions = (rawOptions?: CountryVoteTotalsOptions) =>
   fixtures = Option.fromNullishOrElse(options.fixtures, countryFixtures)
   activeLogger = Option.fromNullishOrElse(options.logger, logger)
   => {
-    readTotals: readTotals,
-    fixtures: fixtures,
+    readTotals,
+    fixtures,
     logger: activeLogger
   }
 
@@ -41,7 +41,7 @@ export createFallbackCountries = (countries: Array<Country>): Array<Country> =>
 
 export readCountriesWithVoteTotals = (options?: CountryVoteTotalsOptions) =>
   effect {
-    resolved = resolveOptions(Option.getOrUndefined(options))
+    resolved = resolveOptions(options)
     readTotalsFn = resolved.readTotals
     totalsEffect = readTotalsFn()
     outcome <- Effect.result(totalsEffect)

@@ -48,7 +48,7 @@ export createRedisVoteStorage = (options?: RedisVoteStorageOptions) =>
   clientFactory = Option.fromNullishOrElse(opts.clientFactory, createDefaultRedisVoteClient)
   getClient = createRedisClientProvider({
     env: opts.env,
-    clientFactory: clientFactory,
+    clientFactory,
     missingConfigMessage: redisUrlEnvVar + " must be set to read or write vote totals.",
     connectionFailureMessage: "Failed to connect to Redis vote storage."
   })
