@@ -1813,7 +1813,7 @@ packages:
     resolution: {integrity: sha512-xckBUXyTIqT97tq2x2AMb+g163b5JFysYk0x4qxNFwbfQkmNZoiRHb6sPzI9/QV33WeuvVYBUIiD4NzNIyqaRQ==}
 
   funscript@file:funscript-0.1.0.tgz:
-    resolution: {integrity: sha512-BUr/TX4FGgWUb2kwu0/44ZUpZCnxfj1tfvd9lwsEsSmuQJjJauhLHHorOhJ2EbMTfAwI+sxwHL1YOjuk7uVNFw==, tarball: file:funscript-0.1.0.tgz}
+    resolution: {integrity: sha512-q5V/bo1Xj5YTAexkoSIvZDATT+83+fhFbP8QTpNd1YiOZ3dgAK1tB85Vgjg9J5pXA5jPpAxwZJorMd5Jz5KSDA==, tarball: file:funscript-0.1.0.tgz}
     version: 0.1.0
     hasBin: true
 

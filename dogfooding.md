@@ -1,6 +1,6 @@
 # FunScript dogfooding
 
-Observed against a bundled local development build based on FunScript commit `c9edc5a`, including uncommitted optional-argument and AssemblyScript changes.
+Observed against a bundled local development build based on FunScript commit `c9edc5a`, including the optional-argument and AssemblyScript changes.
 
 ## Working: Vite and React Router routes
 
