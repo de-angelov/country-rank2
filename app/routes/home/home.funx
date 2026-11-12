@@ -1,5 +1,5 @@
 import { loader as serverLoader } from "./home.server.js"
-import { Effect, Option, Schema, Function } from "effect"
+import { Effect, Option, Schema, Function, Order, Record } from "effect"
 import { useState, useMemo, useEffect } from "react"
 import type { ChangeEvent } from "react"
 import { Country } from "../../countries/country.js"
@@ -11,13 +11,10 @@ export loader = serverLoader
 export SEARCH_DEBOUNCE_MS = 200
 
 export sortCountriesByDisplayName = (countries: Array<Country>): Array<Country> =>
-  sorted = countries |> Array.sort((left, right) =>
-    cmp = left.name.localeCompare(right.name, "en")
-    => match cmp #= 0
-      | true => left.code.localeCompare(right.code, "en")
-      | false => cmp
-  )
-  => sorted
+  byName = Order.mapInput(Order.String, (c: Country) => c.name)
+  byCode = Order.mapInput(Order.String, (c: Country) => c.code)
+  countryOrder = Order.combine(byName, byCode)
+  => countries |> Array.sort(countryOrder)
 
 export filterCountriesByName = (countries: Array<Country>, searchQuery: String): Array<Country> =>
   query = searchQuery |> String.trim |> String.toLowerCase
@@ -36,10 +33,11 @@ readLoaderCountries = (payload: Unknown) =>
   )
 
 updateSearchQuery = (prev: URLSearchParams, query: String) =>
-  entries = Array.fromIterable(prev.entries()) |> Array.filter(([k]) => k #! "q")
-  match query.length #= 0
-    | true => createSearchParams(entries)
-    | false => createSearchParams(Array.append(entries, ["q", query]))
+  baseRecord = Record.fromEntries(prev.entries()) |> Record.remove("q")
+  updated = match query.length #= 0
+    | true => baseRecord
+    | false => baseRecord |> Record.set("q", query)
+  => createSearchParams(updated)
 
 export Home = (props: { countries?: Array<Country>, initialSearch?: String }) =>
   loaderData = Option.try(() => useLoaderData())

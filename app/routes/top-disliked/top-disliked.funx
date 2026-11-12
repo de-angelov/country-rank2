@@ -1,4 +1,4 @@
-import { Effect, Option, Schema } from "effect"
+import { Effect, Option, Schema, Record } from "effect"
 import { useState, useMemo } from "react"
 import { useLoaderData, useSearchParams, createSearchParams } from "react-router"
 import { loader as serverLoader } from "./top-disliked.server.js"
@@ -45,10 +45,11 @@ export TopDisliked = (props: { countries?: Array<Country>, initialOrder?: Rankin
     match searchParams
       | Some([_, setSearchParams]) =>
         setSearchParams((prev: URLSearchParams) =>
-          entries = Array.fromIterable(prev.entries()) |> Array.filter(([k]) => k #! "order")
-          match isLowestFirst(nextOrder)
-            | true => createSearchParams(Array.append(entries, ["order", "lowest-first"]))
-            | false => createSearchParams(entries)
+          baseRecord = Record.fromEntries(prev.entries()) |> Record.remove("order")
+          updated = match isLowestFirst(nextOrder)
+            | true => baseRecord |> Record.set("order", "lowest-first")
+            | false => baseRecord
+          => createSearchParams(updated)
         , { replace: true })
       | None => false
     => nextOrder

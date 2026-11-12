@@ -1,3 +1,4 @@
+import { Order } from "effect"
 import { Country } from "../../countries/country.js"
 import { LowestFirst } from "../../components/ranking-order-controls/ranking-order-controls.js"
 
@@ -9,14 +10,12 @@ export isLowestFirst = (order?: Unknown): Boolean =>
       | _ => false
     | None => false
 
+byLikes = Order.mapInput(Order.Number, (c: Country) => c.likes) |> Order.flip
+byName = Order.mapInput(Order.String, (c: Country) => c.name)
+likeOrder = Order.combine(byLikes, byName)
+
 export sortCountriesByLikesDescending = (countries: Array<Country>) =>
-  sorted = countries |> Array.sort((a, b) =>
-    difference = b.likes - a.likes
-    match difference #= 0
-      | true => a.name.localeCompare(b.name)
-      | false => difference
-  )
-  => sorted
+  countries |> Array.sort(likeOrder)
 
 export sortCountriesByLikesAscending = (countries: Array<Country>) =>
   sorted = sortCountriesByLikesDescending(countries)

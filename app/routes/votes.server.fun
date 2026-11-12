@@ -2,18 +2,30 @@ import { Effect, Option, Schema } from "effect"
 import { Like, Dislike } from "../countries/country.js"
 import { countryFixtures } from "../countries/fixtures.js"
 import { incrementCountryVoteTotal } from "../votes/storage.server.js"
-import type { VoteTotals, RedisVoteStorageError } from "../votes/storage.server.js"
+import type { VoteTotals, RedisVoteStorageError, VoteKind } from "../votes/storage.server.js"
 
 supportedCountryCodes = countryFixtures |> Array.map((country) => country.code |> String.toUpperCase)
 
-readField = (payload: Object, primary: String, fallback: String) =>
-  Option.getOrElse(Option.fromNullishOr(Reflect.get(payload, primary)), () => Reflect.get(payload, fallback))
+readField = (payload: Object, primary: String, fallback: String): Unknown =>
+  primaryVal: Unknown = Reflect.get(payload, primary)
+  fallbackVal: Unknown = Reflect.get(payload, fallback)
+  => Option.getOrElse(Option.fromNullishOr(primaryVal), () => fallbackVal)
 
 normalizePayload = (payload: Object) =>
-  voteType = Option.getOrElse(Option.fromNullishOr(readField(payload, "voteType", "voteKind")), () => Reflect.get(payload, "kind"))
-  => { countryCode: readField(payload, "countryCode", "code"), code: Reflect.get(payload, "code"), voteType: voteType, voteKind: Reflect.get(payload, "voteKind"), kind: Reflect.get(payload, "kind") }
+  rawVote: Unknown = readField(payload, "voteType", "voteKind")
+  kindVal: Unknown = Reflect.get(payload, "kind")
+  voteType: Unknown = Option.getOrElse(Option.fromNullishOr(rawVote), () => kindVal)
+  countryCode: Unknown = readField(payload, "countryCode", "code")
+  codeVal: Unknown = Reflect.get(payload, "code")
+  voteKindVal: Unknown = Reflect.get(payload, "voteKind")
+  => { countryCode: countryCode, code: codeVal, voteType: voteType, voteKind: voteKindVal, kind: kindVal }
 
-normalizeVote = (value: Unknown) =>
+export schema NormalizedVote = {
+  voteType: VoteKind
+  voteKind: Any
+}
+
+normalizeVote = (value: Unknown): Option<NormalizedVote> =>
   stringValue = Schema.decodeUnknownOption(Schema.String)(value)
   taggedValue = Schema.decodeUnknownOption(Schema.Struct({ _tag: Schema.String }))(value)
   normalized = match stringValue
@@ -24,14 +36,38 @@ normalizeVote = (value: Unknown) =>
         | "Dislike" => "dislike"
         | _ => ""
       | None => ""
+  likeVote: NormalizedVote = { voteType: "like", voteKind: Like }
+  dislikeVote: NormalizedVote = { voteType: "dislike", voteKind: Dislike }
   => match normalized
-    | "like" => Option.some({ voteType: "like", voteKind: Like })
-    | "dislike" => Option.some({ voteType: "dislike", voteKind: Dislike })
+    | "like" => Option.some(likeVote)
+    | "dislike" => Option.some(dislikeVote)
     | _ => Option.none()
 
-export validateVoteRequest = (payload: Object) =>
-  rawCountryCode = readField(payload, "countryCode", "code")
-  rawVoteType = Option.getOrElse(Option.fromNullishOr(readField(payload, "voteType", "voteKind")), () => Reflect.get(payload, "kind"))
+export schema VoteValidationSuccess = {
+  ok: true
+  data: {
+    countryCode: String
+    voteType: "like" | "dislike"
+    voteKind: Any
+  }
+}
+
+export schema VoteValidationFailure = {
+  ok: false
+  error: {
+    code: String
+    message: String
+    fieldErrors: Object
+  }
+}
+
+export schema VoteValidationResult = VoteValidationSuccess | VoteValidationFailure
+
+export validateVoteRequest = (payload: Object): VoteValidationResult =>
+  rawCountryCode: Unknown = readField(payload, "countryCode", "code")
+  rawPrimaryVote: Unknown = readField(payload, "voteType", "voteKind")
+  kindVal: Unknown = Reflect.get(payload, "kind")
+  rawVoteType: Unknown = Option.getOrElse(Option.fromNullishOr(rawPrimaryVote), () => kindVal)
   countryCode = Option.getOrElse(Option.map(Schema.decodeUnknownOption(Schema.String)(rawCountryCode), (value) => value |> String.trim |> String.toUpperCase), () => "")
   validCountry = supportedCountryCodes |> Array.contains(countryCode)
   vote = normalizeVote(rawVoteType)
@@ -43,11 +79,15 @@ export validateVoteRequest = (payload: Object) =>
     | [false, true] => { countryCode: "Country code must match a supported country." }
     | [true, false] => { voteType: "Vote type must be like or dislike." }
     | _ => {}
+  createSuccess = (valid: NormalizedVote): VoteValidationSuccess =>
+    ({ ok: true, data: { countryCode: countryCode, voteType: valid.voteType, voteKind: valid.voteKind } })
+  createFailure: () => VoteValidationFailure = () =>
+    ({ ok: false, error: { code: "invalid_vote_request", message: "Vote request payload is invalid.", fieldErrors: fieldErrors } })
   => match vote
     | Some(valid) => match validCountry
-      | true => { ok: true, data: { countryCode: countryCode, voteType: valid.voteType, voteKind: valid.voteKind } }
-      | false => { ok: false, error: { code: "invalid_vote_request", message: "Vote request payload is invalid.", fieldErrors: fieldErrors } }
-    | None => { ok: false, error: { code: "invalid_vote_request", message: "Vote request payload is invalid.", fieldErrors: fieldErrors } }
+      | true => createSuccess(valid)
+      | false => createFailure()
+    | None => createFailure()
 
 export readVoteRequestPayload = (request: Request) =>
   rawContentType = Option.fromNullishOr(request.headers.get("content-type"))
@@ -104,7 +144,18 @@ export handleVoteRequest = (request: Request) =>
     validation = validateVoteRequest(payload)
     => match validation
       | { ok: false } => Effect.succeed(Response.json(validation, { status: 400 }))
-      | { ok: true, data: valid } => Effect["match"](Effect.flatMap(Effect.mapError(Effect.try(() => incrementCountryVoteTotal(valid.countryCode, valid.voteType)), (failure) => failure.cause), toStorageEffect), { onFailure: (failure) => storageErrorResponse(failure), onSuccess: (totals) => Response.json({ ok: true, data: { countryCode: totals.countryCode, voteType: valid.voteType, totals: { likes: totals.likes, dislikes: totals.dislikes } } }, { status: 200 }) })
+      | { ok: true, data: valid } =>
+          operationEffect = Effect.flatMap(
+            Effect.mapError(
+              Effect.try(() => incrementCountryVoteTotal(valid.countryCode, valid.voteType)),
+              (failure) => failure.cause
+            ),
+            toStorageEffect
+          )
+          => operationEffect |> Effect.match({
+            onFailure: (failure) => storageErrorResponse(failure),
+            onSuccess: (totals) => Response.json({ ok: true, data: { countryCode: totals.countryCode, voteType: valid.voteType, totals: { likes: totals.likes, dislikes: totals.dislikes } } }, { status: 200 })
+          })
   }
   => Effect.runPromise(Effect.flatten(result))
 

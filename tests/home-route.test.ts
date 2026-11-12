@@ -115,8 +115,8 @@ describe("home server loader", () => {
         readTotals: () =>
           Effect.succeed(
             new Map([
-              ["JP", { likes: 999, dislikes: 11 }],
-              ["CA", { likes: 555, dislikes: 22 }],
+              ["JP", { countryCode: "JP", likes: 999, dislikes: 11 }],
+              ["CA", { countryCode: "CA", likes: 555, dislikes: 22 }],
             ])
           ),
         fixtures: mockCountries,

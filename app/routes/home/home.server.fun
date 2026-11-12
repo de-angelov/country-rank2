@@ -9,14 +9,19 @@ export schema HomeLoaderResult = {
 export schema HomeLoaderOptions = CountryVoteTotalsOptions
 export schema HomeRouteData = HomeLoaderResult
 
-export readHomeCountries = (options: Unknown = {}) => readCountriesWithVoteTotals(options)
+export readHomeCountries = (options?: CountryVoteTotalsOptions) =>
+  match options
+    | Some(opts) => readCountriesWithVoteTotals(opts)
+    | None => readCountriesWithVoteTotals()
 
 export getHomeCountries = readHomeCountries
 export loadHomeCountries = readHomeCountries
 
-export loadHomeRouteData = (options: Unknown = {}) =>
+export loadHomeRouteData = (options?: CountryVoteTotalsOptions) =>
   result = effect {
-    countries <- readHomeCountries(options)
+    countries <- match options
+      | Some(opts) => readHomeCountries(opts)
+      | None => readHomeCountries()
     => { countries: countries }
   }
   => Effect.runPromise(result)

@@ -1,4 +1,4 @@
-import { Array, Effect, Number, Option, Record } from "effect"
+import { Array, Effect, Number, Option, Record, Schema } from "effect"
 import { createDefaultRedisClient, createRedisClientProvider, getRedisConfig, redisUrlEnvVar } from "../lib/redis.server.js"
 
 export schema VoteKind = "like" | "dislike"
@@ -33,7 +33,7 @@ export validateCountryCode = (countryCode: String) =>
   normalized = countryCode |> String.trim |> String.toUpperCase
   => match RegExp("^[A-Z][A-Z]$").test(normalized)
     | true => Effect.succeed(normalized)
-    | false => Effect.fail({ code: "invalid_country_code", message: "Country code must be a two-letter ISO country code.", countryCode: countryCode })
+    | _ => Effect.fail({ code: "invalid_country_code", message: "Country code must be a two-letter ISO country code.", countryCode: countryCode })
 
 export voteTotalsKey = (voteKind: VoteKind) =>
   match voteKind
@@ -57,16 +57,19 @@ export createRedisVoteStorage = (options?: RedisVoteStorageOptions) =>
     connectionFailureMessage: "Failed to connect to Redis vote storage."
   })
 
-  runRedis = (tryFn: () => Promise<Unknown>, message: String) =>
+  runRedis = <T>(tryFn: () => Promise<T>, message: String) =>
     Effect.mapError(
       Effect.tryPromise(tryFn),
-      (cause: Any) => ({
-        code: "redis_command_failed",
-        message: message,
-        cause: match Option.fromNullishOr(cause.cause)
-          | Some(c) => c
+      (cause: Unknown) =>
+        causeRecord = Schema.decodeUnknownOption(Schema.Struct({ cause: Schema.Unknown }))(cause)
+        actualCause = match causeRecord
+          | Some(rec) => rec.cause
           | None => cause
-      })
+        => ({
+          code: "redis_command_failed",
+          message: message,
+          cause: actualCause
+        })
     )
 
   parseVoteCount = (rawCount: Option<String>) =>
@@ -89,7 +92,7 @@ export createRedisVoteStorage = (options?: RedisVoteStorageOptions) =>
       }
     }
 
-  readAllCountryVoteTotals = () =>
+  readAllCountryVoteTotals: () => Effect<VoteTotalsByCountry, RedisVoteStorageError> = () =>
     effect {
       client <- getClient()
       likesByCountry <- runRedis(() => client.hGetAll(voteTotalsKey("like")), "Failed to read country vote totals from Redis.")

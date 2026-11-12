@@ -1,13 +1,17 @@
-import { Option } from "effect"
+import { Effect, Option } from "effect"
 import { Country } from "../../countries/country.js"
-import type { VoteTotalsByCountry, RedisVoteStorageError } from "../../votes/storage.server.js"
+import type { CountryVoteTotalsOptions } from "../../countries/redis-totals.server.js"
 import { readCountriesWithVoteTotals } from "../../countries/redis-totals.server.js"
 import { sortCountriesByLikes } from "./ranking.js"
 
-export readTopLikedCountries = (options: { order?: Unknown, readTotals?: () => Effect<VoteTotalsByCountry, RedisVoteStorageError>, fixtures?: Array<Country>, logger?: { error: (context: { cause: Unknown }, message: String) => Void } }) =>
+export schema ReadTopLikedCountriesOptions = CountryVoteTotalsOptions & {
+  order?: Unknown
+}
+
+export readTopLikedCountries = (options: ReadTopLikedCountriesOptions) =>
   effect {
-    resolved = { order: Option.getOrUndefined(options.order), readTotals: Option.getOrUndefined(options.readTotals), fixtures: Option.getOrUndefined(options.fixtures), logger: Option.getOrUndefined(options.logger) }
+    resolved = { readTotals: options.readTotals, fixtures: options.fixtures, logger: options.logger }
     countries <- readCountriesWithVoteTotals(resolved)
-    sorted = sortCountriesByLikes(countries, resolved.order)
+    sorted = sortCountriesByLikes(countries, options.order)
     => sorted
   }

@@ -1,14 +1,18 @@
-import { Effect, Option, Result } from "effect"
+import { Effect, Option } from "effect"
 import { countryFixtures } from "./fixtures.js"
 import { logger, type ApplicationLogger } from "../lib/logger.server.js"
 import { readAllCountryVoteTotals } from "../votes/storage.server.js"
 import { Country } from "./country.js"
 import type { VoteTotalsByCountry, RedisVoteStorageError } from "../votes/storage.server.js"
 
+export schema LoggerLike = {
+  error: (context: { cause: Unknown }, message: String) => Void
+}
+
 export schema CountryVoteTotalsOptions = {
   readTotals?: () => Effect<VoteTotalsByCountry, RedisVoteStorageError>
   fixtures?: Array<Country>
-  logger?: ApplicationLogger
+  logger?: LoggerLike | ApplicationLogger
 }
 
 export resolveOptions = (rawOptions?: CountryVoteTotalsOptions) =>
@@ -30,7 +34,7 @@ export resolveOptions = (rawOptions?: CountryVoteTotalsOptions) =>
     logger: activeLogger
   }
 
-export logRedisTotalsError = (err: Unknown, customLogger?: ApplicationLogger) =>
+export logRedisTotalsError = (err: Unknown, customLogger?: LoggerLike | ApplicationLogger) =>
   activeLogger = match customLogger
     | Some(l) => l
     | None => logger
@@ -54,12 +58,13 @@ export readCountriesWithVoteTotals = (options?: CountryVoteTotalsOptions) =>
     resolved = resolveOptions(options)
     readTotalsFn = resolved.readTotals
     totalsEffect = readTotalsFn()
-    outcome <- Effect.result(totalsEffect)
-    countries = match
-      | Result.isSuccess(outcome) => mergeCountriesWithVoteTotals(resolved.fixtures, outcome.success)
-      | _ =>
-        _ = logRedisTotalsError(outcome.failure, resolved.logger)
-        createFallbackCountries(resolved.fixtures)
+    countries <- totalsEffect |> Effect.match({
+      onFailure: (failure) =>
+        _ = logRedisTotalsError(failure, resolved.logger)
+        => createFallbackCountries(resolved.fixtures)
+      ,
+      onSuccess: (totals) => mergeCountriesWithVoteTotals(resolved.fixtures, totals)
+    })
     => countries
   }
 

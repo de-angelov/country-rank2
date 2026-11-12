@@ -1,4 +1,4 @@
-import { Effect } from "effect"
+import { Effect, Option, Schema } from "effect"
 import { isLowestFirst as sharedIsLowestFirst, sortCountriesByDislikesDescending as sharedSortCountriesByDislikesDescending, sortCountriesByDislikesAscending as sharedSortCountriesByDislikesAscending, sortCountriesByDislikes as sharedSortCountriesByDislikes } from "./ranking.js"
 import { Country } from "../../countries/index.js"
 import { readCountriesWithVoteTotals } from "../../countries/redis-totals.server.js"
@@ -22,7 +22,7 @@ export readTopDislikedCountries = (options: Object) =>
   effect {
     resolved = resolveTopDislikedOptions(options)
     countries <- readCountriesWithVoteTotals(resolved)
-    order = Reflect.get(resolved, "order")
+    order: Unknown = Reflect.get(resolved, "order")
     sorted = sortCountriesByDislikes(countries, order)
     => sorted
   }
@@ -38,8 +38,12 @@ export loadTopDislikedRouteData = (options: Object) =>
   => Effect.runPromise(routeData)
 
 export loader = (args: Object = {}) =>
-  request = Reflect.get(args or {}, "request")
-  url = globalThis.String(Reflect.get(request or {}, "url") or "")
+  requestVal: Unknown = Reflect.get(args, "request")
+  requestObj: Object = match Schema.decodeUnknownOption(Schema.Record(Schema.String, Schema.Unknown))(requestVal)
+    | Some(r) => r
+    | None => {}
+  urlVal: Unknown = Reflect.get(requestObj, "url")
+  url = Option.getOrElse(Schema.decodeUnknownOption(Schema.String)(urlVal), () => "")
   => match url |> String.includes("order=lowest-first")
     | true => loadTopDislikedRouteData({ order: "lowest-first" })
-    | false => loadTopDislikedRouteData({ order: "highest-first" })
+    | _ => loadTopDislikedRouteData({ order: "highest-first" })
