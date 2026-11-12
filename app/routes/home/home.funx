@@ -46,20 +46,17 @@ export Home = (props: { countries?: Array<Country>, initialSearch?: String }) =>
     | Some(payload) => readLoaderCountries(payload)
     | None => []
   searchParamsTuple = Effect.runSync(Effect.option(Effect.try(() => useSearchParams())))
-  setSearchParams = Option.getOrUndefined(Option.map(searchParamsTuple, (params) => params[1]))
+  setSearchParams = match searchParamsTuple
+    | Some([_, setSp]) => Option.some(setSp)
+    | None => Option.none()
   queryFromParams = match searchParamsTuple
-    | Some(params) => Option.fromNullishOrElse(params[0].get("q"), "")
+    | Some([params, _]) => Option.fromNullishOrElse(params.get("q"), "")
     | None => ""
   initialSearch = Option.getOrUndefined(props.initialSearch)
   initialQuery = Option.getOrElse(props.initialSearch, () => queryFromParams)
 
-  searchInputState = useState(initialQuery)
-  searchInput = searchInputState[0]
-  setSearchInput = searchInputState[1]
-
-  debouncedState = useState(initialQuery)
-  debouncedQuery = debouncedState[0]
-  setDebouncedQuery = debouncedState[1]
+  [searchInput, setSearchInput] = useState(initialQuery)
+  [debouncedQuery, setDebouncedQuery] = useState(initialQuery)
 
   countries = Option.getOrElse(props.countries, () => rawCountries)
   sortedCountries = useMemo(() => sortCountriesByDisplayName(countries), [countries])

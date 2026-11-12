@@ -23,14 +23,12 @@ export TopLiked = (props: { countries?: Array<Country>, initialOrder?: RankingOr
   loaderData = Effect.runSync(Effect.option(Effect.try(() => useLoaderData())))
   searchParams = Effect.runSync(Effect.option(Effect.try(() => useSearchParams())))
   initialOrder = Option.getOrElse(props.initialOrder, () => match searchParams
-    | Some(params) => match params[0].get("order") #= "lowest-first"
+    | Some([params, _]) => match params.get("order") #= "lowest-first"
       | true => LowestFirst
       | false => HighestFirst
     | None => HighestFirst
   )
-  orderState = useState(initialOrder)
-  order = orderState[0]
-  setOrder = orderState[1]
+  [order, setOrder] = useState(initialOrder)
   countries = Option.getOrElse(props.countries, () => match loaderData
     | Some(payload) => readLoaderCountries(payload)
     | None => []
@@ -41,7 +39,7 @@ export TopLiked = (props: { countries?: Array<Country>, initialOrder?: RankingOr
     setOrder(nextOrder)
     match searchParams
       | Some(params) =>
-        setSearchParams = params[1]
+        [_, setSearchParams] = params
         setSearchParams((prev: URLSearchParams) =>
           next = createSearchParams(prev)
           match isLowestFirst(nextOrder)
