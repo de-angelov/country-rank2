@@ -34,7 +34,7 @@ export schema RedisClientProviderOptions<Client> = {
 
 export resolveRedisUrl = (env?: NodeJS.ProcessEnv) =>
   variables = env or process.env
-  url = Option.map(Option.fromNullishOr(variables[redisUrlEnvVar]), (value) => value.trim())
+  url = Option.map(Option.fromNullishOr(variables[redisUrlEnvVar]), (value) => value |> String.trim)
   nonEmpty = Option.filter(url, (value) => value.length #! 0)
   => Option.getOrNull(nonEmpty)
 
@@ -43,7 +43,7 @@ export getRedisConfig = (env?: NodeJS.ProcessEnv, message?: String) =>
   failureMessage = message or "REDIS_URL must be set to connect to Redis."
   => match url
     | Some(value) => Effect.succeed({ url: value })
-    | None => Effect.fail(Object.freeze({ code: "missing_redis_config", message: failureMessage, envVar: redisUrlEnvVar }))
+    | None => Effect.fail({ code: "missing_redis_config", message: failureMessage, envVar: redisUrlEnvVar })
 
 export createDefaultRedisClient = (config: RedisConfig): RedisConnectableClient =>
   createClient({ url: config.url })
@@ -63,7 +63,7 @@ export createRedisClientProvider = <Client>(options: RedisClientProviderOptions<
                   => Promise.reject(cause)
                 })
               }),
-              (err: Any) => Object.freeze({ code: "redis_connection_failed", message: options.connectionFailureMessage, cause: err.cause or err })
+              (err: Any) => ({ code: "redis_connection_failed", message: options.connectionFailureMessage, cause: err.cause or err })
             ),
             (client) => {
               cachedClient = Option.some(client)

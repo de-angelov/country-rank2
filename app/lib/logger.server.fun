@@ -93,7 +93,7 @@ export getLogLevel = (env?: NodeJS.ProcessEnv): SupportedLogLevel =>
   rawEnv = env or process.env
   rawLevel = Option.fromNullishOr(rawEnv[logLevelEnvVar])
   configuredLevel = match rawLevel
-    | Some(level) => level.trim().toLowerCase()
+    | Some(level) => level |> String.trim |> String.toLowerCase
     | None => ""
   match configuredLevel
     | "trace" => "trace"

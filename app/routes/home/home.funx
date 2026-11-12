@@ -20,10 +20,10 @@ export sortCountriesByDisplayName = (countries: Array<Country>): Array<Country> 
   => sorted
 
 export filterCountriesByName = (countries: Array<Country>, searchQuery: String): Array<Country> =>
-  query = searchQuery.trim().toLocaleLowerCase()
+  query = searchQuery |> String.trim |> String.toLowerCase
   => match query.length #= 0
     | true => countries
-    | false => countries |> Array.filter((country) => country.name.toLocaleLowerCase().includes(query))
+    | false => countries |> Array.filter((country) => country.name |> String.toLowerCase |> String.includes(query))
 
 readLoaderCountries = (payload: Unknown) =>
   direct = Schema.decodeUnknownOption(Schema.Array(Country))(payload)
@@ -72,7 +72,7 @@ export Home = (props: { countries?: Array<Country>, initialSearch?: String }) =>
   useEffect(() =>
     timer = setTimeout(() =>
       setDebouncedQuery(searchInput)
-      trimmed = searchInput.trim()
+      trimmed = searchInput |> String.trim
       => match Option.fromNullishOr(setSearchParams)
         | Some(update) => update((prev: URLSearchParams) => updateSearchQuery(prev, trimmed), { replace: true })
         | None => Function.constVoid()

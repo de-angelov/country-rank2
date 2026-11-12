@@ -30,10 +30,10 @@ export getRedisVoteStorageConfig = (env?: NodeJS.ProcessEnv) =>
   getRedisConfig(Option.getOrUndefined(env), "REDIS_URL must be set to read or write vote totals.")
 
 export validateCountryCode = (countryCode: String) =>
-  normalized = countryCode.trim().toUpperCase()
+  normalized = countryCode |> String.trim |> String.toUpperCase
   => match RegExp("^[A-Z][A-Z]$").test(normalized)
     | true => Effect.succeed(normalized)
-    | false => Effect.fail(Object.freeze({ code: "invalid_country_code", message: "Country code must be a two-letter ISO country code.", countryCode: countryCode }))
+    | false => Effect.fail({ code: "invalid_country_code", message: "Country code must be a two-letter ISO country code.", countryCode: countryCode })
 
 export voteTotalsKey = (voteKind: VoteKind) =>
   match voteKind
@@ -56,7 +56,7 @@ export createRedisVoteStorage = (options?: RedisVoteStorageOptions) =>
   runRedis = (tryFn: () => Promise<Unknown>, message: String) =>
     Effect.mapError(
       Effect.tryPromise(tryFn),
-      (cause: Any) => Object.freeze({ code: "redis_command_failed", message: message, cause: cause.cause or cause })
+      (cause: Any) => ({ code: "redis_command_failed", message: message, cause: cause.cause or cause })
     )
 
   readCountryVoteTotals = (countryCode: String) =>
@@ -77,9 +77,9 @@ export createRedisVoteStorage = (options?: RedisVoteStorageOptions) =>
       client <- getClient()
       likesByCountry <- runRedis(() => client.hGetAll(voteTotalsKey("like")), "Failed to read country vote totals from Redis.")
       dislikesByCountry <- runRedis(() => client.hGetAll(voteTotalsKey("dislike")), "Failed to read country vote totals from Redis.")
-      likes = likesByCountry or Object.freeze({})
-      dislikes = dislikesByCountry or Object.freeze({})
-      allKeys = Object.keys(likes).concat(Object.keys(dislikes))
+      likes = likesByCountry or {}
+      dislikes = dislikesByCountry or {}
+      allKeys = Array.appendAll(Record.keys(likes), Record.keys(dislikes))
       countryCodes = Array.fromIterable(Set(allKeys))
       entries = countryCodes |> Array.map((code) => [code, {
         countryCode: code,

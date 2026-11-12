@@ -39,7 +39,7 @@ export loadTopDislikedRouteData = (options: Object) =>
 
 export loader = (args: Object = {}) =>
   request = Reflect.get(args or {}, "request")
-  url = String(Reflect.get(request or {}, "url") or "")
-  => match url.includes("order=lowest-first")
+  url = globalThis.String(Reflect.get(request or {}, "url") or "")
+  => match url |> String.includes("order=lowest-first")
     | true => loadTopDislikedRouteData({ order: "lowest-first" })
     | false => loadTopDislikedRouteData({ order: "highest-first" })

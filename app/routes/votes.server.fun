@@ -4,7 +4,7 @@ import { countryFixtures } from "../countries/fixtures.js"
 import { incrementCountryVoteTotal } from "../votes/storage.server.js"
 import type { VoteTotals, RedisVoteStorageError } from "../votes/storage.server.js"
 
-supportedCountryCodes = countryFixtures |> Array.map((country) => country.code.toUpperCase())
+supportedCountryCodes = countryFixtures |> Array.map((country) => country.code |> String.toUpperCase)
 
 readField = (payload: Object, primary: String, fallback: String) =>
   Option.getOrElse(Option.fromNullishOr(Reflect.get(payload, primary)), () => Reflect.get(payload, fallback))
@@ -17,7 +17,7 @@ normalizeVote = (value: Unknown) =>
   stringValue = Schema.decodeUnknownOption(Schema.String)(value)
   taggedValue = Schema.decodeUnknownOption(Schema.Struct({ _tag: Schema.String }))(value)
   normalized = match stringValue
-    | Some(text) => text.trim().toLowerCase()
+    | Some(text) => text |> String.trim |> String.toLowerCase
     | None => match taggedValue
       | Some(tagged) => match tagged._tag
         | "Like" => "like"
@@ -25,15 +25,15 @@ normalizeVote = (value: Unknown) =>
         | _ => ""
       | None => ""
   => match normalized
-    | "like" => Option.some(Object.freeze({ voteType: "like", voteKind: Like }))
-    | "dislike" => Option.some(Object.freeze({ voteType: "dislike", voteKind: Dislike }))
+    | "like" => Option.some({ voteType: "like", voteKind: Like })
+    | "dislike" => Option.some({ voteType: "dislike", voteKind: Dislike })
     | _ => Option.none()
 
 export validateVoteRequest = (payload: Object) =>
   rawCountryCode = readField(payload, "countryCode", "code")
   rawVoteType = Option.getOrElse(Option.fromNullishOr(readField(payload, "voteType", "voteKind")), () => Reflect.get(payload, "kind"))
-  countryCode = Option.getOrElse(Option.map(Schema.decodeUnknownOption(Schema.String)(rawCountryCode), (value) => value.trim().toUpperCase()), () => "")
-  validCountry = supportedCountryCodes.includes(countryCode)
+  countryCode = Option.getOrElse(Option.map(Schema.decodeUnknownOption(Schema.String)(rawCountryCode), (value) => value |> String.trim |> String.toUpperCase), () => "")
+  validCountry = supportedCountryCodes |> Array.contains(countryCode)
   vote = normalizeVote(rawVoteType)
   validVote = match vote
     | Some(_) => true
@@ -45,13 +45,13 @@ export validateVoteRequest = (payload: Object) =>
     | _ => {}
   => match vote
     | Some(valid) => match validCountry
-      | true => Object.freeze({ ok: true, data: { countryCode: countryCode, voteType: valid.voteType, voteKind: valid.voteKind } })
-      | false => Object.freeze({ ok: false, error: { code: "invalid_vote_request", message: "Vote request payload is invalid.", fieldErrors: fieldErrors } })
-    | None => Object.freeze({ ok: false, error: { code: "invalid_vote_request", message: "Vote request payload is invalid.", fieldErrors: fieldErrors } })
+      | true => { ok: true, data: { countryCode: countryCode, voteType: valid.voteType, voteKind: valid.voteKind } }
+      | false => { ok: false, error: { code: "invalid_vote_request", message: "Vote request payload is invalid.", fieldErrors: fieldErrors } }
+    | None => { ok: false, error: { code: "invalid_vote_request", message: "Vote request payload is invalid.", fieldErrors: fieldErrors } }
 
 export readVoteRequestPayload = (request: Request) =>
   contentType = request.headers.get("content-type") or ""
-  reading = match contentType.includes("application/json")
+  reading = match contentType |> String.includes("application/json")
     | true => Effect.map(Effect.option(Effect.tryPromise(() => request.json())), (body) => match body
       | Some(value) => match Schema.decodeUnknownOption(Schema.Record(Schema.String, Schema.Unknown))(value)
         | Some(record) => normalizePayload(record)

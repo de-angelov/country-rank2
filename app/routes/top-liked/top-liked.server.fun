@@ -34,14 +34,14 @@ export loadTopLikedRouteData = (options: { order?: Unknown, readTotals?: () => E
 
 export loader = (args: Unknown = {}, options: Unknown = {}) =>
   request = Reflect.get(args or {}, "request")
-  url = String(Reflect.get(request or {}, "url") or "http://localhost")
-  query = url.split("?")[1] or ""
-  queryWithoutHash = query.split("#")[0] or ""
-  orderParameter = (queryWithoutHash.split("&") |> Array.findFirst((parameter) => (parameter.split("=")[0] or "") #= "order")) or ""
-  orderParam = orderParameter.split("=")[1] or ""
+  url = globalThis.String(Reflect.get(request or {}, "url") or "http://localhost")
+  query = (url |> String.split("?"))[1] or ""
+  queryWithoutHash = (query |> String.split("#"))[0] or ""
+  orderParameter = (queryWithoutHash |> String.split("&") |> Array.findFirst((parameter) => ((parameter |> String.split("="))[0] or "") #= "order")) or ""
+  orderParam = (orderParameter |> String.split("="))[1] or ""
   order = match orderParam
     | "lowest-first" => "lowest-first"
     | "highest-first" => "highest-first"
     | _ => Reflect.get(options or {}, "order") or "highest-first"
-  resolvedOptions = Object.assign({}, options or {}, { order: order })
+  resolvedOptions = { ...(options or {}), order: order }
   => loadTopLikedRouteData(resolvedOptions)
