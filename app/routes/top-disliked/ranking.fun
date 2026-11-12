@@ -15,10 +15,10 @@ dislikeComparator = (a: Country, b: Country) =>
     | false => a.name.localeCompare(b.name)
 
 export sortCountriesByDislikesDescending = (countries: Array<Country>) =>
-  countries.slice().sort(dislikeComparator)
+  countries |> Array.sort(dislikeComparator)
 
 export sortCountriesByDislikesAscending = (countries: Array<Country>) =>
-  sortCountriesByDislikesDescending(countries).reverse()
+  sortCountriesByDislikesDescending(countries) |> Array.reverse
 
 export sortCountriesByDislikes = (countries: Array<Country>, order: Unknown = "highest-first") =>
   match isLowestFirst(order)

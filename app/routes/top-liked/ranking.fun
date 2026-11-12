@@ -10,7 +10,7 @@ export isLowestFirst = (order?: Unknown): Boolean =>
     | None => false
 
 export sortCountriesByLikesDescending = (countries: Array<Country>) =>
-  sorted = countries.slice().sort((a, b) =>
+  sorted = countries |> Array.sort((a, b) =>
     difference = b.likes - a.likes
     match difference #= 0
       | true => a.name.localeCompare(b.name)
@@ -20,7 +20,7 @@ export sortCountriesByLikesDescending = (countries: Array<Country>) =>
 
 export sortCountriesByLikesAscending = (countries: Array<Country>) =>
   sorted = sortCountriesByLikesDescending(countries)
-  => sorted.reverse()
+  => sorted |> Array.reverse
 
 export sortCountriesByLikes = (countries: Array<Country>, order: Unknown = "highest-first") =>
   match isLowestFirst(order)

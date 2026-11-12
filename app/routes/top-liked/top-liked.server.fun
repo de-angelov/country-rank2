@@ -37,7 +37,7 @@ export loader = (args: Unknown = {}, options: Unknown = {}) =>
   url = String(Reflect.get(request or {}, "url") or "http://localhost")
   query = url.split("?")[1] or ""
   queryWithoutHash = query.split("#")[0] or ""
-  orderParameter = queryWithoutHash.split("&").find((parameter) => (parameter.split("=")[0] or "") #= "order") or ""
+  orderParameter = (queryWithoutHash.split("&") |> Array.findFirst((parameter) => (parameter.split("=")[0] or "") #= "order")) or ""
   orderParam = orderParameter.split("=")[1] or ""
   order = match orderParam
     | "lowest-first" => "lowest-first"

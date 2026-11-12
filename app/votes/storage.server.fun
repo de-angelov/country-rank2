@@ -80,8 +80,8 @@ export createRedisVoteStorage = (options?: RedisVoteStorageOptions) =>
       likes = likesByCountry or Object.freeze({})
       dislikes = dislikesByCountry or Object.freeze({})
       allKeys = Object.keys(likes).concat(Object.keys(dislikes))
-      countryCodes = Array.from(Set(allKeys))
-      entries = countryCodes.map((code) => [code, {
+      countryCodes = Array.fromIterable(Set(allKeys))
+      entries = countryCodes |> Array.map((code) => [code, {
         countryCode: code,
         likes: Number(likes[code] or 0),
         dislikes: Number(dislikes[code] or 0)

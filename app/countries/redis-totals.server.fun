@@ -27,7 +27,7 @@ export logRedisTotalsError = (err: Unknown, customLogger?: ApplicationLogger) =>
   => activeLogger.error({ cause: err }, "Failed to read country vote totals from Redis; falling back to zero totals")
 
 export mergeCountriesWithVoteTotals = (countries: Array<Country>, totalsByCountry: VoteTotalsByCountry): Array<Country> =>
-  countries.map((country) =>
+  countries |> Array.map((country) =>
     voteTotals = Option.fromNullishOr(totalsByCountry.get(country.code))
     totals = match voteTotals
       | Some(value) => value
@@ -37,7 +37,7 @@ export mergeCountriesWithVoteTotals = (countries: Array<Country>, totalsByCountr
   )
 
 export createFallbackCountries = (countries: Array<Country>): Array<Country> =>
-  countries.map((country) => { ...country, likes: 0, dislikes: 0 })
+  countries |> Array.map((country) => { ...country, likes: 0, dislikes: 0 })
 
 export readCountriesWithVoteTotals = (options?: CountryVoteTotalsOptions) =>
   effect {

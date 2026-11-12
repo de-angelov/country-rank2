@@ -11,7 +11,7 @@ export loader = serverLoader
 export SEARCH_DEBOUNCE_MS = 200
 
 export sortCountriesByDisplayName = (countries: Array<Country>): Array<Country> =>
-  sorted = countries.slice().sort((left, right) =>
+  sorted = countries |> Array.sort((left, right) =>
     cmp = left.name.localeCompare(right.name, "en")
     => match cmp #= 0
       | true => left.code.localeCompare(right.code, "en")
@@ -22,8 +22,8 @@ export sortCountriesByDisplayName = (countries: Array<Country>): Array<Country> 
 export filterCountriesByName = (countries: Array<Country>, searchQuery: String): Array<Country> =>
   query = searchQuery.trim().toLocaleLowerCase()
   => match query.length #= 0
-    | true => countries.slice()
-    | false => countries.filter((country) => country.name.toLocaleLowerCase().includes(query))
+    | true => countries
+    | false => countries |> Array.filter((country) => country.name.toLocaleLowerCase().includes(query))
 
 readLoaderCountries = (payload: Unknown) =>
   direct = Schema.decodeUnknownOption(Schema.Array(Country))(payload)
