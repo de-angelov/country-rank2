@@ -106,7 +106,7 @@ export getLogLevel = (env?: NodeJS.ProcessEnv): SupportedLogLevel =>
     | _ => defaultLogLevel
 
 export createApplicationLogger = (options?: CreateApplicationLoggerOptions) =>
-  opts = Option.fromNullishOrElse(options, {})
+  opts = options or {}
   config = {
     level: getLogLevel(opts.env),
     redact: {

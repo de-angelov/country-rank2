@@ -15,7 +15,7 @@ readLoaderCountries = (payload: Unknown) =>
   direct = Schema.decodeUnknownOption(Schema.Array(Country))(payload)
   wrapped = Schema.decodeUnknownOption(Schema.Struct({ countries: Schema.optional(Schema.Array(Country)) }))(payload)
   => Option.getOrElse(direct, () => match wrapped
-    | Some(result) => Option.fromNullishOrElse(result.countries, [])
+    | Some(result) => result.countries or []
     | None => []
   )
 

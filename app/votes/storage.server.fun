@@ -44,8 +44,8 @@ export createDefaultRedisVoteClient = (config: RedisVoteStorageConfig): RedisVot
   createDefaultRedisClient(config)
 
 export createRedisVoteStorage = (options?: RedisVoteStorageOptions) =>
-  opts = Option.fromNullishOrElse(options, {})
-  clientFactory = Option.fromNullishOrElse(opts.clientFactory, createDefaultRedisVoteClient)
+  opts = options or {}
+  clientFactory = opts.clientFactory or createDefaultRedisVoteClient
   getClient = createRedisClientProvider({
     env: opts.env,
     clientFactory,
@@ -56,7 +56,7 @@ export createRedisVoteStorage = (options?: RedisVoteStorageOptions) =>
   runRedis = (tryFn: () => Promise<Unknown>, message: String) =>
     Effect.mapError(
       Effect.tryPromise(tryFn),
-      (cause: Any) => Object.freeze({ code: "redis_command_failed", message: message, cause: Option.fromNullishOrElse(cause.cause, cause) })
+      (cause: Any) => Object.freeze({ code: "redis_command_failed", message: message, cause: cause.cause or cause })
     )
 
   readCountryVoteTotals = (countryCode: String) =>
@@ -67,8 +67,8 @@ export createRedisVoteStorage = (options?: RedisVoteStorageOptions) =>
       dislikes <- runRedis(() => client.hGet(voteTotalsKey("dislike"), normalized), "Failed to read country vote totals from Redis.")
       => {
         countryCode: normalized,
-        likes: Number(Option.fromNullishOrElse(likes, 0)),
-        dislikes: Number(Option.fromNullishOrElse(dislikes, 0))
+        likes: Number(likes or 0),
+        dislikes: Number(dislikes or 0)
       }
     }
 
@@ -77,14 +77,14 @@ export createRedisVoteStorage = (options?: RedisVoteStorageOptions) =>
       client <- getClient()
       likesByCountry <- runRedis(() => client.hGetAll(voteTotalsKey("like")), "Failed to read country vote totals from Redis.")
       dislikesByCountry <- runRedis(() => client.hGetAll(voteTotalsKey("dislike")), "Failed to read country vote totals from Redis.")
-      likes = Option.fromNullishOrElse(likesByCountry, Object.freeze({}))
-      dislikes = Option.fromNullishOrElse(dislikesByCountry, Object.freeze({}))
+      likes = likesByCountry or Object.freeze({})
+      dislikes = dislikesByCountry or Object.freeze({})
       allKeys = Object.keys(likes).concat(Object.keys(dislikes))
       countryCodes = Array.from(Set(allKeys))
       entries = countryCodes.map((code) => [code, {
         countryCode: code,
-        likes: Number(Option.fromNullishOrElse(likes[code], 0)),
-        dislikes: Number(Option.fromNullishOrElse(dislikes[code], 0))
+        likes: Number(likes[code] or 0),
+        dislikes: Number(dislikes[code] or 0)
       }])
       => Map(entries)
     }

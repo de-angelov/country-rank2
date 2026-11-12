@@ -63,7 +63,7 @@ export createRedisClientProvider = <Client>(options: RedisClientProviderOptions<
                   => Promise.reject(cause)
                 })
               }),
-              (err: Any) => Object.freeze({ code: "redis_connection_failed", message: options.connectionFailureMessage, cause: Option.fromNullishOrElse(err.cause, err) })
+              (err: Any) => Object.freeze({ code: "redis_connection_failed", message: options.connectionFailureMessage, cause: err.cause or err })
             ),
             (client) => {
               cachedClient = Option.some(client)
