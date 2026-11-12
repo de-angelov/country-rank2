@@ -47,8 +47,8 @@ export CountryCardVoteIconSprite = () =>
     </symbol>
   </svg>
 
-export CountryCardVoteIcon = (props: VoteIconProps) =>
-  symbolId = match props.voteType
+export CountryCardVoteIcon = ({ voteType }: VoteIconProps) =>
+  symbolId = match voteType
     | "dislike" => "country-card-thumbs-down"
     | _ => "country-card-thumbs-up"
   => <svg
@@ -64,11 +64,11 @@ export schema CountryFlagInput = {
   flagImageUrl: String
 }
 
-export getCountryCardFlagImageUrl = (country: CountryFlagInput): String => country.flagImageUrl
+export getCountryCardFlagImageUrl = ({ flagImageUrl }: CountryFlagInput): String => flagImageUrl
 
 export CountryCard = (props: SchemaInput<CountryCardProps>) =>
   country = props.country
-  className = Option.getOrElse(Option.fromUndefinedOr(props.className), () => "")
+  className = props.className or ""
   likeCount = country.likes["toLocaleString"]("en-US")
   dislikeCount = country.dislikes["toLocaleString"]("en-US")
   totalVotes = country.likes + country.dislikes

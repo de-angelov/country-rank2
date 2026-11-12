@@ -20,19 +20,17 @@ readLoaderCountries = (payload: Unknown) =>
   )
 
 export TopDisliked = (props: { countries?: Array<Country>, initialOrder?: RankingOrder }) =>
-  loaderData = Effect.runSync(Effect.option(Effect.try(() => useLoaderData())))
-  searchParams = Effect.runSync(Effect.option(Effect.try(() => useSearchParams())))
-  initialOrder = Option.getOrElse(props.initialOrder, () => match searchParams
+  loaderData = Option.try(() => useLoaderData())
+  searchParams = Option.try(() => useSearchParams())
+  initialOrder = props.initialOrder or match searchParams
     | Some([params, _]) => match params.get("order") #= "lowest-first"
       | true => LowestFirst
       | false => HighestFirst
     | None => HighestFirst
-  )
   [order, setOrder] = useState(initialOrder)
-  countries = Option.getOrElse(props.countries, () => match loaderData
+  countries = props.countries or match loaderData
     | Some(payload) => readLoaderCountries(payload)
     | None => []
-  )
   lowest = isLowestFirst(order)
   displayedCountries = useMemo(() => sortCountriesByDislikes(countries, order), [countries, order])
   handleOrderChange = (nextOrder: RankingOrder) =>

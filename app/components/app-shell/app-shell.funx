@@ -2,7 +2,7 @@ import { Link } from "react-router"
 import type { ReactNode } from "react"
 export schema AppShellProps = { children: Unknown }
 
-export AppShell = (props: { children: ReactNode }) =>
+export AppShell = ({ children }: { children: ReactNode }) =>
   <div className="min-h-screen flex flex-col bg-background text-foreground font-sans">
     <header className="border-b-2 border-black bg-white shadow-[var(--shadow)]">
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -32,7 +32,7 @@ export AppShell = (props: { children: ReactNode }) =>
       </div>
     </header>
     <main className="max-w-6xl mx-auto w-full px-4 py-6 flex-1">
-      {props.children}
+      {children}
     </main>
   </div>
 
