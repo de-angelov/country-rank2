@@ -44,8 +44,8 @@ export createDefaultRedisVoteClient = (config: RedisVoteStorageConfig): RedisVot
   => createDefaultRedisClient(config)
 
 export createRedisVoteStorage = (options?: RedisVoteStorageOptions) =>
-  opts = Option.getOrElse(options, () => ({}))
-  clientFactory = Option.getOrElse(Option.fromNullishOr(opts.clientFactory), () => createDefaultRedisVoteClient)
+  opts = Option.fromNullishOrElse(options, {})
+  clientFactory = Option.fromNullishOrElse(opts.clientFactory, createDefaultRedisVoteClient)
   getClient = createRedisClientProvider({
     env: opts.env,
     clientFactory: clientFactory,
@@ -56,7 +56,7 @@ export createRedisVoteStorage = (options?: RedisVoteStorageOptions) =>
   runRedis = (tryFn: () => Promise<Unknown>, message: String) =>
     Effect.mapError(
       Effect.tryPromise(tryFn),
-      (cause: Any) => Object.freeze({ code: "redis_command_failed", message: message, cause: Option.getOrElse(Option.fromNullishOr(cause.cause), () => cause) })
+      (cause: Any) => Object.freeze({ code: "redis_command_failed", message: message, cause: Option.fromNullishOrElse(cause.cause, cause) })
     )
 
   readCountryVoteTotals = (countryCode: String) =>
@@ -67,8 +67,8 @@ export createRedisVoteStorage = (options?: RedisVoteStorageOptions) =>
       dislikes <- runRedis(() => client.hGet(voteTotalsKey("dislike"), normalized), "Failed to read country vote totals from Redis.")
       => {
         countryCode: normalized,
-        likes: Number(Option.getOrElse(Option.fromNullishOr(likes), () => 0)),
-        dislikes: Number(Option.getOrElse(Option.fromNullishOr(dislikes), () => 0))
+        likes: Number(Option.fromNullishOrElse(likes, 0)),
+        dislikes: Number(Option.fromNullishOrElse(dislikes, 0))
       }
     }
 
@@ -77,14 +77,14 @@ export createRedisVoteStorage = (options?: RedisVoteStorageOptions) =>
       client <- getClient()
       likesByCountry <- runRedis(() => client.hGetAll(voteTotalsKey("like")), "Failed to read country vote totals from Redis.")
       dislikesByCountry <- runRedis(() => client.hGetAll(voteTotalsKey("dislike")), "Failed to read country vote totals from Redis.")
-      likes = Option.getOrElse(Option.fromNullishOr(likesByCountry), () => Object.freeze({}))
-      dislikes = Option.getOrElse(Option.fromNullishOr(dislikesByCountry), () => Object.freeze({}))
+      likes = Option.fromNullishOrElse(likesByCountry, Object.freeze({}))
+      dislikes = Option.fromNullishOrElse(dislikesByCountry, Object.freeze({}))
       allKeys = Object.keys(likes).concat(Object.keys(dislikes))
       countryCodes = Array.from(Set(allKeys))
       entries = countryCodes.map((code) => [code, {
         countryCode: code,
-        likes: Number(Option.getOrElse(Option.fromNullishOr(likes[code]), () => 0)),
-        dislikes: Number(Option.getOrElse(Option.fromNullishOr(dislikes[code]), () => 0))
+        likes: Number(Option.fromNullishOrElse(likes[code], 0)),
+        dislikes: Number(Option.fromNullishOrElse(dislikes[code], 0))
       }])
       => Map(entries)
     }

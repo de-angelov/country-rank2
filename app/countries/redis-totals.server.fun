@@ -12,10 +12,10 @@ export schema CountryVoteTotalsOptions = {
 }
 
 export resolveOptions = (rawOptions?: CountryVoteTotalsOptions) =>
-  options = Option.getOrElse(rawOptions, () => ({}))
-  readTotals = Option.getOrElse(Option.fromNullishOr(options.readTotals), () => readAllCountryVoteTotals)
-  fixtures = Option.getOrElse(Option.fromNullishOr(options.fixtures), () => countryFixtures)
-  activeLogger = Option.getOrElse(Option.fromNullishOr(options.logger), () => logger)
+  options = Option.fromNullishOrElse(rawOptions, {})
+  readTotals = Option.fromNullishOrElse(options.readTotals, readAllCountryVoteTotals)
+  fixtures = Option.fromNullishOrElse(options.fixtures, countryFixtures)
+  activeLogger = Option.fromNullishOrElse(options.logger, logger)
   => {
     readTotals: readTotals,
     fixtures: fixtures,
@@ -23,7 +23,7 @@ export resolveOptions = (rawOptions?: CountryVoteTotalsOptions) =>
   }
 
 export logRedisTotalsError = (err: Unknown, customLogger?: ApplicationLogger) =>
-  activeLogger = Option.getOrElse(Option.fromNullishOr(customLogger), () => logger)
+  activeLogger = Option.fromNullishOrElse(customLogger, logger)
   => activeLogger.error({ cause: err }, "Failed to read country vote totals from Redis; falling back to zero totals")
 
 export mergeCountriesWithVoteTotals = (countries: Array<Country>, totalsByCountry: VoteTotalsByCountry): Array<Country> =>
@@ -41,7 +41,7 @@ export createFallbackCountries = (countries: Array<Country>): Array<Country> =>
 
 export readCountriesWithVoteTotals = (options?: CountryVoteTotalsOptions) =>
   effect {
-    resolved = resolveOptions(options)
+    resolved = resolveOptions(Option.getOrUndefined(options))
     readTotalsFn = resolved.readTotals
     totalsEffect = readTotalsFn()
     outcome <- Effect.result(totalsEffect)

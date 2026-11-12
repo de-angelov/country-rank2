@@ -106,17 +106,15 @@ export getLogLevel = (env?: NodeJS.ProcessEnv): SupportedLogLevel =>
     | _ => defaultLogLevel
 
 export createApplicationLogger = (options?: CreateApplicationLoggerOptions) =>
-  opts = Option.getOrElse(options, () => ({}))
-  rawEnv = Option.getOrUndefined(opts.env)
-  rawStream = Option.getOrUndefined(opts.stream)
+  opts = Option.fromNullishOrElse(options, {})
   config = {
-    level: getLogLevel(rawEnv),
+    level: getLogLevel(opts.env),
     redact: {
       paths: sensitiveLogRedactionPaths,
       censor: redactedLogValue
     }
   }
-  => pino(config, rawStream)
+  => pino(config, opts.stream)
 
 mut defaultApplicationLogger: Option<PinoLogger> = Option.none()
 

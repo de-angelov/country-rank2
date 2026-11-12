@@ -63,7 +63,7 @@ export createRedisClientProvider = <Client>(options: RedisClientProviderOptions<
                   => Promise.reject(cause)
                 })
               }),
-              (err: Any) => Object.freeze({ code: "redis_connection_failed", message: options.connectionFailureMessage, cause: Option.getOrElse(Option.fromNullishOr(err.cause), () => err) })
+              (err: Any) => Object.freeze({ code: "redis_connection_failed", message: options.connectionFailureMessage, cause: Option.fromNullishOrElse(err.cause, err) })
             ),
             (client) => {
               cachedClient = Option.some(client)
@@ -72,7 +72,7 @@ export createRedisClientProvider = <Client>(options: RedisClientProviderOptions<
           )
 
   => () => effect {
-    config <- getRedisConfig(options.env, options.missingConfigMessage)
+    config <- getRedisConfig(Option.getOrUndefined(options.env), options.missingConfigMessage)
     client <- getClient(config)
     => client
   }

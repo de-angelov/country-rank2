@@ -29,7 +29,7 @@ readLoaderCountries = (payload: Unknown) =>
   direct = Schema.decodeUnknownOption(Schema.Array(Country))(payload)
   wrapped = Schema.decodeUnknownOption(Schema.Struct({ countries: Schema.optional(Schema.Array(Country)) }))(payload)
   => Option.getOrElse(direct, () => match wrapped
-    | Some(result) => Option.getOrElse(Option.fromNullishOr(result.countries), () => [])
+    | Some(result) => Option.fromNullishOrElse(result.countries, [])
     | None => []
   )
 
@@ -48,7 +48,7 @@ export Home = (props: { countries?: Array<Country>, initialSearch?: String }) =>
   searchParamsTuple = Effect.runSync(Effect.option(Effect.try(() => useSearchParams())))
   setSearchParams = Option.getOrUndefined(Option.map(searchParamsTuple, (params) => params[1]))
   queryFromParams = match searchParamsTuple
-    | Some(params) => Option.getOrElse(Option.fromNullishOr(params[0].get("q")), () => "")
+    | Some(params) => Option.fromNullishOrElse(params[0].get("q"), "")
     | None => ""
   initialSearch = Option.getOrUndefined(props.initialSearch)
   initialQuery = Option.getOrElse(props.initialSearch, () => queryFromParams)
