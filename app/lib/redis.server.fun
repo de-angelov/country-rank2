@@ -46,7 +46,7 @@ export getRedisConfig = (env?: NodeJS.ProcessEnv, message?: String) =>
     | None => Effect.fail(Object.freeze({ code: "missing_redis_config", message: failureMessage, envVar: redisUrlEnvVar }))
 
 export createDefaultRedisClient = (config: RedisConfig): RedisConnectableClient =>
-  => createClient({ url: config.url })
+  createClient({ url: config.url })
 
 export createRedisClientProvider = <Client>(options: RedisClientProviderOptions<Client>) =>
   mut cachedClient: Option<Client> = Option.none()

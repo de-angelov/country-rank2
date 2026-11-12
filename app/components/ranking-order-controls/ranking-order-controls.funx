@@ -21,7 +21,7 @@ export RankingOrderControls = (props: RankingOrderControlsProps) =>
     | HighestFirst => true
     | LowestFirst => false
   ignoreOrderChange = (nextOrder: RankingOrder) =>
-    => nextOrder
+    nextOrder
   onOrderChange = props.onOrderChange or ignoreOrderChange
   handleSelect = (nextOrder: RankingOrder) =>
     onOrderChange(nextOrder)

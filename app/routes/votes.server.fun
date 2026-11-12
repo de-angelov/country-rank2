@@ -7,7 +7,7 @@ import type { VoteTotals, RedisVoteStorageError } from "../votes/storage.server.
 supportedCountryCodes = countryFixtures.map((country) => country.code.toUpperCase())
 
 readField = (payload: Object, primary: String, fallback: String) =>
-  => Option.getOrElse(Option.fromNullishOr(Reflect.get(payload, primary)), () => Reflect.get(payload, fallback))
+  Option.getOrElse(Option.fromNullishOr(Reflect.get(payload, primary)), () => Reflect.get(payload, fallback))
 
 normalizePayload = (payload: Object) =>
   voteType = Option.getOrElse(Option.fromNullishOr(readField(payload, "voteType", "voteKind")), () => Reflect.get(payload, "kind"))

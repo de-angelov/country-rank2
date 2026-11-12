@@ -27,7 +27,7 @@ export schema RedisVoteStorageOptions = {
 }
 
 export getRedisVoteStorageConfig = (env?: NodeJS.ProcessEnv) =>
-  => getRedisConfig(Option.getOrUndefined(env), "REDIS_URL must be set to read or write vote totals.")
+  getRedisConfig(Option.getOrUndefined(env), "REDIS_URL must be set to read or write vote totals.")
 
 export validateCountryCode = (countryCode: String) =>
   normalized = countryCode.trim().toUpperCase()
@@ -41,7 +41,7 @@ export voteTotalsKey = (voteKind: VoteKind) =>
     | _ => "country:votes:dislikes"
 
 export createDefaultRedisVoteClient = (config: RedisVoteStorageConfig): RedisVoteClient =>
-  => createDefaultRedisClient(config)
+  createDefaultRedisClient(config)
 
 export createRedisVoteStorage = (options?: RedisVoteStorageOptions) =>
   opts = Option.fromNullishOrElse(options, {})
