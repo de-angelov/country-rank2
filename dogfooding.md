@@ -1,6 +1,6 @@
 # FunScript dogfooding
 
-Observed against a bundled local development build based on FunScript commit `c9edc5a`, including the optional-argument and AssemblyScript changes.
+This app uses the checked-in `funscript-0.1.0.tgz` development build. Its version alone does not identify the compiler commit; see the tarball history when comparing results.
 
 ## Working: Vite and React Router routes
 
@@ -24,20 +24,29 @@ Named callback contracts carry type-only metadata through TypeScript declaration
 
 The development compiler supports JSX spread, including optional-record forwarding to a statically verified FunScript component. A wrapper can reuse the named props contract, and TypeScript rejects a callback with the wrong argument type. Spreading an optional record into an unknown target remains rejected. A JSX spread creates React's normal props object; it does not promise to preserve the original object's identity.
 
-## Open: escape-hatch checking
+## Escape-hatch checking
 
-The project-level `npm run check:idiomatic` reports locations for non-ambient `ts {}` blocks using the FunScript lexer. It deliberately fails while the remaining blocks exist. The checker imports an internal compiler module; a stable public API or compiler diagnostic would remove that coupling.
+`npm run check:idiomatic` uses the FunScript lexer to reject non-ambient standalone
+TypeScript blocks in `app/`. It passes on the current tree. The checker imports an
+internal compiler module, so a stable public API or compiler diagnostic would remove
+that coupling.
 
-## Remaining migration
+## Current integration and remaining friction
 
-The home server's Promise adapter, country vote-total mapping, fallback mapping, and vote storage key are now native FunScript. The remaining TypeScript is concentrated around these examples:
+- The UI wrappers live in `.funx` files and use React prop types, JSX spread and
+  library-defined variants. `app/lib/utils.fun` implements the variadic `cn` helper
+  with a rest parameter. The top-liked route is also implemented in FunScript.
+- Optional record forwarding remains restricted to targets the compiler can verify;
+  imported contract metadata has limitations for optional records nested in callback
+  parameters, containers or unions. Named JavaScript props contracts and runtime
+  data schemas still need careful distinction.
+- TypeScript diagnostic remapping requires an up-to-date default `.funscript/types`
+  view and `funscript tsc`; plain `tsc`, watch mode and custom output directories do
+  not provide the same mapping.
+- `app/root.tsx` and `app/routes.ts` remain React Router entry/configuration files;
+  tests and build configuration also use TypeScript.
 
-- `app/components/ui/{button,card,progress}.tsx` use React's native component prop types, JSX prop spreading and rest fields, and library-defined variant types. FunScript's current restrictions on whole optional records and rest parameters make preserving those wrappers' general-purpose APIs awkward.
-- `app/lib/utils.ts` exposes a variadic `cn(...inputs)` API. FunScript does not yet support rest parameters.
-- `app/routes/home/home.funx` now implements the router-hook fallbacks and query updates in FunScript. It uses `createSearchParams` to copy query parameters and retains the debounced search behavior. As with the disliked route, its optional props are inline rather than exported as a named raw props type.
-- `app/routes/top-disliked/top-disliked.funx` now implements its interactive component in FunScript, including router fallbacks, optional props, sorting, and query updates. It uses `Effect.try` for hooks used outside their router context, validates loader data with Effect Schema, and copies query parameters with React Router's `createSearchParams`. The similar `top-liked` component still uses a TypeScript block. Exporting the old `TopDislikedProps` type remains a gap: the component's inline optional-record parameter preserves its inferred React props, but FunScript cannot yet give that callback-free JavaScript props contract a reusable name without treating it as a decoded data schema.
-- `app/routes/votes.server.fun` now parses and validates requests and constructs responses in FunScript. It uses a type-only escape for the Effect-or-Promise storage boundary; the previous named TypeScript request/result aliases are no longer exported. The generic Redis cache and most vote-storage operations remain in TypeScript; Redis URL/configuration and vote country-code validation are now FunScript. `app/countries/redis-totals.server.fun` and `app/lib/logger.server.fun` also retain TypeScript for optional dependency injection and imported library types.
-- Inline objects returned directly from callbacks and match arms, such as `(country) => { ...country, likes: 0 }`, are supported and used by the country vote-total mappings.
-- `app/root.tsx` and `app/routes.ts` are React Router entry/configuration files; tests and build configuration also contain TypeScript. They need separate framework/tooling assessment before removal.
-
-The `npm run check:idiomatic` check still reports six remaining non-ambient TypeScript blocks. TypeScript diagnostics from plain `tsc` or an unsupported type view may refer to cache paths rather than original FunScript locations.
+When updating the bundled compiler, run `npx funscript check app/`, `npm run
+typecheck`, `npm test`, `npm run build` and `npm run check:idiomatic`. Record the
+compiler commit alongside the tarball update and rerun these checks rather than
+assuming the unchanged package version identifies the build.
