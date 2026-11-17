@@ -32,9 +32,9 @@ export wrapTopLikedCountries = (countries: Array<Country>) =>
 export loadTopLikedRouteData = (options: { order?: Unknown, readTotals?: () => Effect<VoteTotalsByCountry, RedisVoteStorageError>, fixtures?: Array<Country>, logger?: ApplicationLogger }) =>
   mapped = Effect.map(countryReader.readTopLikedCountries({
     order: Option.getOrUndefined(options.order),
-    readTotals: Option.getOrUndefined(options.readTotals),
-    fixtures: Option.getOrUndefined(options.fixtures),
-    logger: Option.getOrUndefined(options.logger)
+    readTotals: options.readTotals,
+    fixtures: options.fixtures,
+    logger: options.logger
   }), wrapTopLikedCountries)
   => Effect.runPromise(mapped)
 

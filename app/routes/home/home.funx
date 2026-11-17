@@ -56,7 +56,6 @@ export Home = (props: { countries?: Array<Country>, initialSearch?: String }) =>
   initialQuery = match props.initialSearch
     | Some(search) => search
     | None => queryFromParams
-  initialSearch = Option.getOrUndefined(props.initialSearch)
 
   [searchInput, setSearchInput] = useState(initialQuery)
   [debouncedQuery, setDebouncedQuery] = useState(initialQuery)
@@ -67,12 +66,12 @@ export Home = (props: { countries?: Array<Country>, initialSearch?: String }) =>
   sortedCountries = useMemo(() => sortCountriesByDisplayName(countries), [countries])
   displayedCountries = useMemo(() => filterCountriesByName(sortedCountries, debouncedQuery), [sortedCountries, debouncedQuery])
 
-  useEffect(() => match Option.fromNullishOr(initialSearch)
+  useEffect(() => match props.initialSearch
     | Some(value) =>
       setSearchInput(value)
       => setDebouncedQuery(value)
     | None => Function.constVoid()
-  , [initialSearch])
+  , [props.initialSearch])
 
   useEffect(() =>
     timer = setTimeout(() =>

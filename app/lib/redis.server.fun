@@ -33,14 +33,14 @@ export schema RedisClientProviderOptions<Client> = {
 }
 
 export resolveRedisUrl = (env?: NodeJS.ProcessEnv) =>
-  variables = Option.fromNullishOr(env) |> Option.getOrElse(() => process.env)
+  variables = Option.getOrElse(env, () => process.env)
   url = Option.map(Option.fromNullishOr(variables[redisUrlEnvVar]), (value) => value |> String.trim)
   nonEmpty = Option.filter(url, (value) => value.length #! 0)
   => Option.getOrNull(nonEmpty)
 
 export getRedisConfig = (env?: NodeJS.ProcessEnv, message?: String) =>
-  url = Option.fromNullishOr(resolveRedisUrl(Option.getOrUndefined(env)))
-  failureMessage = Option.fromNullishOr(message) |> Option.getOrElse(() => "REDIS_URL must be set to connect to Redis.")
+  url = Option.fromNullishOr(resolveRedisUrl(env))
+  failureMessage = Option.getOrElse(message, () => "REDIS_URL must be set to connect to Redis.")
   => match url
     | Some(value) => Effect.succeed({ url: value })
     | None => Effect.fail({ code: "missing_redis_config", message: failureMessage, envVar: redisUrlEnvVar })
@@ -77,7 +77,7 @@ export createRedisClientProvider = <Client extends RedisConnectableClient>(optio
     })
 
   => () => effect {
-    config <- getRedisConfig(Option.getOrUndefined(options.env), options.missingConfigMessage)
+    config <- getRedisConfig(options.env, options.missingConfigMessage)
     client <- getClient(config)
     => client
   }
