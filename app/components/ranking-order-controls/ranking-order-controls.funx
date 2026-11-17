@@ -27,7 +27,7 @@ export RankingOrderControls = (props: RankingOrderControlsProps) =>
   ignoreOrderChange = (nextOrder: RankingOrder) =>
     nextOrder
   onOrderChange = match props.onOrderChange
-    | Some(fn) => fn
+    | Some(handler) => handler
     | None => ignoreOrderChange
   handleSelect = (nextOrder: RankingOrder) =>
     onOrderChange(nextOrder)

@@ -20,7 +20,7 @@ export resolveOptions = (rawOptions?: CountryVoteTotalsOptions) =>
     | Some(opts) => opts
     | None => {}
   readTotals = match Option.fromNullishOr(options.readTotals)
-    | Some(fn) => fn
+    | Some(customReadTotals) => customReadTotals
     | None => readAllCountryVoteTotals
   fixtures = match Option.fromNullishOr(options.fixtures)
     | Some(f) => f
